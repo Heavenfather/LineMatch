@@ -33,15 +33,32 @@ namespace Hotfix.Logic.GamePlay
             }
             else if(config.elementType == ElementType.StarBomb)
             {
+                priority = 4;
                 ref var comp = ref world.GetPool<StarBombComponent>().Add(entity);
                 comp.StarDotBaseElementId =
                     RandomInitColor(context.CurrentLevel.initColor, context.CurrentLevel.initColorRate);
             }
             else if(config.elementType == ElementType.SearchDot)
             {
+                priority = 4;
                 ref var comp = ref world.GetPool<SearchDotComponent>().Add(entity);
                 comp.SearchDotBaseElementId =
                     RandomInitColor(context.CurrentLevel.initColor, context.CurrentLevel.initColorRate);
+            }
+            else if(config.elementType == ElementType.TowDotsColoredDot)
+            {
+                priority = 4;
+                world.GetPool<TowDotsColoredBallComponent>().Add(entity);
+            }
+            else if(config.elementType == ElementType.TowDotsBombDot)
+            {
+                priority = 4;
+                world.GetPool<TowDotsBombDotComponent>().Add(entity);
+            }
+            else if(config.elementType == ElementType.HorizontalDot)
+            {
+                priority = 4;
+                world.GetPool<HorizontalDotComponent>().Add(entity);
             }
             
             // 功能棋子打上特殊的标签
