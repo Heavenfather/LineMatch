@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22b8f8166ecb4b3b9e899ce134568adc, type: 3}
+  m_Name: NativeLocalization_CN
+  m_EditorClassIdentifier: 
+  languageEntries:
+  - Key: Initializing
+    Value: "\u521D\u59CB\u5316\u4E2D..."
+  - Key: CheckRemoteVersion
+    Value: "\u6821\u9A8C\u7248\u672C\u4FE1\u606F..."
+  - Key: CheckRemoteVersionSuccess
+    Value: "\u6821\u9A8C\u7248\u672C\u4FE1\u606F\u5B8C\u6210"
+  - Key: CheckRemoteVersionFail
+    Value: "\u6821\u9A8C\u7248\u672C\u4FE1\u606F\u5931\u8D25"
+  - Key: CheckAppUpdate
+    Value: "\u66F4\u65B0\u5E94\u7528\u7248\u672C..."
+  - Key: InitializePackage
+    Value: "\u6B63\u5728\u521D\u59CB\u5316\u8D44\u6E90\u5305..."
+  - Key: UpdateResVersion
+    Value: "\u66F4\u65B0\u8D44\u6E90\u7248\u672C..."
+  - Key: UpdateResManifest
+    Value: "\u66F4\u65B0\u8D44\u6E90\u6E05\u5355..."
+  - Key: DownloadRes
+    Value: "\u6B63\u5728\u4E0B\u8F7D\u8D44\u6E90..."
+  - Key: LoadAssembly
+    Value: "\u4EE3\u7801\u7F16\u8BD1\u4E2D..."
+  - Key: DoneSuccess
+    Value: "\u52A0\u8F7D\u5B8C\u6210\uFF0C\u51C6\u5907\u8FDB\u5165\u6E38\u620F..."
+  - Key: UpdateInitPackageFail
+    Value: "\u8D44\u6E90\u5305\u521D\u59CB\u5316\u5931\u8D25,\u70B9\u51FB\u91CD\u8BD5\uFF01"
+  - Key: UpdateRetry
+    Value: "\u91CD\u8BD5"
+  - Key: HotUpdateRetryState
+    Value: "\u5F00\u59CB\u91CD\u8BD5.."
+  - Key: UpdatePackageVersionFail
+    Value: "\u66F4\u65B0\u8D44\u6E90\u5305\u7248\u672C\u5931\u8D25\uFF0C\u70B9\u51FB\u91CD\u8BD5\uFF01"
+  - Key: UpdatePackageManifestFail
+    Value: "\u66F4\u65B0\u8D44\u6E90\u6E05\u5355\u6587\u4EF6\u5931\u8D25\uFF0C\u70B9\u51FB\u91CD\u8BD5\uFF01"
+  - Key: UpdatePreloading
+    Value: "\u9884\u52A0\u8F7D\u8D44\u6E90..."
+  - Key: UpdatePreloadFail
+    Value: "\u9884\u52A0\u8F7D\u6E38\u620F\u8D44\u6E90\u5931\u8D25,\u70B9\u51FB\u91CD\u8BD5\uFF01"
+  - Key: LoadAssemblyFail
+    Value: "\u4EE3\u7801\u7F16\u8BD1\u5931\u8D25,\u70B9\u51FB\u91CD\u8BD5\uFF01"
+  - Key: DownloadDoneClearCache
+    Value: "\u8D44\u6E90\u4E0B\u8F7D\u5B8C\u6210\uFF0C\u6B63\u5728\u6E05\u7406\u672C\u5730\u7F13\u5B58..."
+  - Key: DownloadResErrorRetry
+    Value: "\u8D44\u6E90\u4E0B\u8F7D\u5931\u8D25,\u70B9\u51FB\u91CD\u8BD5\uFF01"
+  - Key: DownloadResErrorCheckRetry
+    Value: "\u8D44\u6E90\u591A\u6B21\u5C1D\u8BD5\u4E0B\u8F7D\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u72B6\u6001\u540E\uFF0C\u70B9\u51FB\u91CD\u8BD5\uFF01"

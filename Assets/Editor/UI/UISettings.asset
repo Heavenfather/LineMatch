@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ce3a2d17b9a4f10b1fab32b565e9041, type: 3}
+  m_Name: UISettings
+  m_EditorClassIdentifier: 
+  _codeAuthor: DefaultAuthor
+  _nameSpace: HotfixLogic
+  _codePath: Assets/Scripts/Hotfix/Logic
+  _uiElementKv:
+  - NameRegex: go_
+    ComponentName: GameObject
+  - NameRegex: tf_
+    ComponentName: Transform
+  - NameRegex: rect_
+    ComponentName: RectTransform
+  - NameRegex: text_
+    ComponentName: TextMeshProUGUI
+  - NameRegex: img_
+    ComponentName: Image
+  - NameRegex: btn_
+    ComponentName: Button
+  - NameRegex: oldtext_
+    ComponentName: Text
+  - NameRegex: rawImg_
+    ComponentName: RawImage
+  - NameRegex: scroll_
+    ComponentName: ScrollRect
+  - NameRegex: scrollEx_
+    ComponentName: ScrollRectExtension
+  - NameRegex: scrollExCont_
+    ComponentName: ScrollExtensionContent
+  - NameRegex: slider_
+    ComponentName: Slider
+  - NameRegex: toggleGroup_
+    ComponentName: ToggleGroup
+  - NameRegex: toggle_
+    ComponentName: Toggle
+  - NameRegex: canvasGroup_
+    ComponentName: CanvasGroup
+  - NameRegex: gridLayout_
+    ComponentName: GridLayoutGroup
+  - NameRegex: hLayout_
+    ComponentName: HorizontalLayoutGroup
+  - NameRegex: vLayout_
+    ComponentName: VerticalLayoutGroup
+  - NameRegex: input_
+    ComponentName: TMP_InputField
+  - NameRegex: oldinput_
+    ComponentName: InputField
+  - NameRegex: cell_
+    ComponentName: GameObject
+  - NameRegex: scrollbar_
+    ComponentName: Scrollbar
+  - NameRegex: variable_
+    ComponentName: VariableArray
+  - NameRegex: widget_
+    ComponentName: GameObject
+  - NameRegex: myBtn_
+    ComponentName: SuperButton
+  - NameRegex: spine_
+    ComponentName: SkeletonGraphic
+  - NameRegex: drop
+    ComponentName: TMP_Dropdown
+  - NameRegex: fillImg_
+    ComponentName: SlicedFilledImage
+  - NameRegex: btnEx_
+    ComponentName: SuperButton

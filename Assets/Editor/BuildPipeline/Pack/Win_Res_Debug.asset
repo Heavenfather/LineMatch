@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99723c84ce3441a0b5fa005a2f211a8e, type: 3}
+  m_Name: Win_Res_Debug
+  m_EditorClassIdentifier: 
+  buildApp: 0
+  buildTarget: 19
+  webGLTarget: 0
+  version: 
+  buildType: 0
+  pipeLine: 446
+  packageNames:
+  - AssetMain
+  enableSymbols: []
+  disableSymbols: []
+  buildAppOptions: 1
+  CompanyName: 
+  MainCDN: http://192.168.10.43/cdn/
+  FallbackCDN: https://leyou-cdn.game.jingyougz.com/

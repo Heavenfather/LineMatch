@@ -1,0 +1,404 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185f6993d5150494d98da50e26cb1c25, type: 3}
+  m_Name: YooCollector
+  m_EditorClassIdentifier: 
+  ShowPackageView: 1
+  ShowEditorAlias: 1
+  UniqueBundleName: 0
+  Packages:
+  - PackageName: AssetMain
+    PackageDesc: "\u9ED8\u8BA4\u4E3B\u5305"
+    EnableAddressable: 1
+    LocationToLower: 0
+    IncludeAssetGUID: 0
+    AutoCollectShaders: 1
+    IgnoreRuleName: NormalIgnoreRule
+    Groups:
+    - GroupName: UI
+      GroupDesc: 
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/UI/Prefab
+        CollectorGUID: 45caaea06473c8b4b8b6de32b9a4867d
+        CollectorType: 0
+        AddressRuleName: GameRegexUIRule
+        PackRuleName: PackTopDirectory
+        FilterRuleName: GameFilterPreloadPrefab
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/UI/Sprites
+        CollectorGUID: 12e3d598447bf184c8fe5da7daef2248
+        CollectorType: 0
+        AddressRuleName: GameRegexUIRule
+        PackRuleName: PackTopDirectory
+        FilterRuleName: GameFilterPreloadTexture
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/UI/Texture
+        CollectorGUID: a76fe95fbb74626488f3453041fd9fa8
+        CollectorType: 0
+        AddressRuleName: GameRegexUIRule
+        PackRuleName: PackSeparately
+        FilterRuleName: GameFilterPreloadTexture
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/UI/Prefab/Login
+        CollectorGUID: ae48cb64ea580fd4bae57665657903c6
+        CollectorType: 0
+        AddressRuleName: GameRegexUIRule
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectPrefab
+        AssetTags: Preload
+        UserData: 
+      - CollectPath: Assets/ArtLoad/UI/Spine/MainLevel
+        CollectorGUID: 059e1916210b4e64e93b92c90436096a
+        CollectorType: 0
+        AddressRuleName: GameAddressRuleFileName
+        PackRuleName: PackTopDirectory
+        FilterRuleName: CollectAsset
+        AssetTags: 
+        UserData: 
+    - GroupName: Dll
+      GroupDesc: "\u4EE3\u7801"
+      AssetTags: Preload
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Dll/Hotfix
+        CollectorGUID: 51342fa4d42a6644791a7bac3c56b6b5
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;dll/$1
+      - CollectPath: Assets/ArtLoad/Dll/MetaDll
+        CollectorGUID: 84ad7855d1e52f446aa618a7d13f7ce6
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;dll/$1
+    - GroupName: Localization
+      GroupDesc: "\u591A\u8BED\u8A00"
+      AssetTags: Preload
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Localization
+        CollectorGUID: c7777fc070fd41ccaac71f601c7fabda
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;localization/$1
+    - GroupName: Audio
+      GroupDesc: "\u58F0\u97F3"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Audio
+        CollectorGUID: 8b4176e7eb98e7a4da22a11f7987118c
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: GameFilterPreloadAudio
+        AssetTags: 
+        UserData: ^Assets/ArtLoad/Audio/(.+?)(?:\.\w+)?$;audio/$1
+      - CollectPath: Assets/ArtLoad/Audio/Preload
+        CollectorGUID: 21173c10bc16dd64e996ffffa22c33df
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: Preload
+        UserData: ^Assets/ArtLoad/Audio/(.+?)(?:\.\w+)?$;audio/$1
+    - GroupName: Config
+      GroupDesc: "\u6E38\u620F\u914D\u7F6E\u6587\u4EF6"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Config
+        CollectorGUID: 80db07a8377a52a47b73dbdd8344680f
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;config/$1
+    - GroupName: Match
+      GroupDesc: "\u6D88\u9664\u8D44\u6E90"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Match/Element
+        CollectorGUID: 2fc5bd40865345743bfc78f625ca71db
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectPrefab
+        AssetTags: 
+        UserData: .+\/(.+)\..+;match/prefab/$1
+      - CollectPath: Assets/ArtLoad/Match/Sprites
+        CollectorGUID: 870ab5968f349494eac9d7a45a76a7c6
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectSprite
+        AssetTags: 
+        UserData: .+\/(.+)\..+;match/sprites/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelA
+        CollectorGUID: c9e8776d1dc455541bf798735b617efd
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;match/levela/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB1-100
+        CollectorGUID: 0e86367f212ccac469f3074551bd6e5e
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB101-200
+        CollectorGUID: baeeb0c104995f6468b5edb5b8d9c0a8
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB201-300
+        CollectorGUID: 4043153cdb9802e44884b99a43f736b2
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB301-400
+        CollectorGUID: 1db42121827c27147a761d7a1dde56b9
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB401-500
+        CollectorGUID: 22f73ba0e3360c043b940e0be8454139
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB501-600
+        CollectorGUID: 5ec3610540f84654eae22d7f4577a742
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB601-700
+        CollectorGUID: 3b6617a6cbf126e41be70d2291bb38de
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB701-800
+        CollectorGUID: a607e62d5fde0c3489ea1e769fc049f3
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB801-900
+        CollectorGUID: b96295f0e57b4e042bba26d7907e52a8
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelB901-1000
+        CollectorGUID: 1e631496cbfdb204caa255074108bad6
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: MatchLevel
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/CoinLevel
+        CollectorGUID: de286a1b53363ab41ad40fc9b7191e34
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/Guide
+        CollectorGUID: 9ba9f97468e95d94fa8431eb41c6eb36
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;match/levelb/$1
+      - CollectPath: Assets/ArtLoad/Match/LevelC
+        CollectorGUID: d1a7ea9137d8f584aa19b7700850945c
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;match/levelc/$1
+    - GroupName: Puzzle
+      GroupDesc: "\u5BFB\u5B9D"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Puzzle/Sprite/Collect
+        CollectorGUID: b2e401b185f6dc340b2ff09e34a88499
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;puzzle/sprite/collect/$1
+      - CollectPath: Assets/ArtLoad/Puzzle/Element
+        CollectorGUID: 2931c7c2b33cba440aa192d98bd82cfa
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;puzzle/element/$1
+      - CollectPath: Assets/ArtLoad/Puzzle/Head
+        CollectorGUID: 06a049ca5ffb8274f8fb2ba4826e02c3
+        CollectorType: 0
+        AddressRuleName: AddressByFolderAndFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;puzzle/sprite/head/$1
+      - CollectPath: Assets/ArtLoad/Puzzle/Spine
+        CollectorGUID: 379446d7348d56e40b780aff4aa22567
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;puzzle/spine/$1
+      - CollectPath: Assets/ArtLoad/Puzzle/BG
+        CollectorGUID: 9a7bd58ace793344ba1c52ed67869208
+        CollectorType: 0
+        AddressRuleName: AddressByFolderAndFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/Puzzle/Animator
+        CollectorGUID: 52ce79e74119f7e4ea1ba53dae37f7da
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;puzzle/animator/$1
+      - CollectPath: Assets/ArtLoad/Puzzle/Audio
+        CollectorGUID: dae476f7fca81d042a401b84371e92cf
+        CollectorType: 0
+        AddressRuleName: AddressByFolderAndFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/Puzzle/OnlyImg
+        CollectorGUID: b34a767ff50331e4f931f75846da825b
+        CollectorType: 0
+        AddressRuleName: AddressByFolderAndFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/Puzzle/Level
+        CollectorGUID: 923e1394f4939464c98f60410def7de4
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;puzzle/jsonconfig/$1
+    - GroupName: Shader
+      GroupDesc: 
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Shader
+        CollectorGUID: 04ac01e1bdec60340a8372e5e262c190
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectShader
+        AssetTags: 
+        UserData: 
+      - CollectPath: Assets/ArtLoad/Material
+        CollectorGUID: fe15a120cc3d0264badebdc256594cd3
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackDirectory
+        FilterRuleName: CollectAll
+        AssetTags: 
+        UserData: .+\/(.+)\..+;material/$1
+      - CollectPath: Assets/ArtLoad/MyShaderVariants.shadervariants
+        CollectorGUID: 7570b3402f5e21645baec2a5919e97d7
+        CollectorType: 0
+        AddressRuleName: AddressByFileName
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectShaderVariants
+        AssetTags: 
+        UserData: 
+    - GroupName: Effect
+      GroupDesc: "\u7279\u6548"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Effect
+        CollectorGUID: b97d84611f9c8c141bb9523151f70440
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectPrefab
+        AssetTags: 
+        UserData: .+\/(.+)\..+;effect/$1
+    - GroupName: Scene
+      GroupDesc: "\u573A\u666F"
+      AssetTags: 
+      ActiveRuleName: EnableGroup
+      Collectors:
+      - CollectPath: Assets/ArtLoad/Scenes
+        CollectorGUID: d5a64f1f8caef254c8386f24285ae956
+        CollectorType: 0
+        AddressRuleName: GameRegexRuleToLower
+        PackRuleName: PackSeparately
+        FilterRuleName: CollectScene
+        AssetTags: 
+        UserData: .+\/(.+)\..+;scenes/$1

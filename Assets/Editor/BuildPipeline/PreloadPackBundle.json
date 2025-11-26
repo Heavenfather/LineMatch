@@ -1,0 +1,10 @@
+{
+  "Preload": [
+    "Assets/ArtLoad/UI/Prefab/Login",
+    "Assets/ArtLoad/UI/Sprites/Login",
+    "Assets/ArtLoad/Audio/Preload",
+    "Assets/ArtLoad/Dll/Hotfix",
+    "Assets/ArtLoad/Dll/MetaDll",
+    "Assets/ArtLoad/Localization"
+  ]
+}
