@@ -26,5 +26,10 @@ namespace Hotfix.Logic.GamePlay
             ref var eleComponent = ref world.GetPool<ElementComponent>().Get(entity);
             eleComponent.IsMatchable = true;
         }
+
+        public bool IsElementCanSelected(EcsWorld world, int entity)
+        {
+            return true;
+        }
     }
 }

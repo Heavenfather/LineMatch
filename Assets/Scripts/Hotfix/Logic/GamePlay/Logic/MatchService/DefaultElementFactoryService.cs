@@ -40,7 +40,7 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        public void RegisterBuilder(IElementBuilder builder)
+        private void RegisterBuilder(IElementBuilder builder)
         {
             _builders[builder.TargetType] = builder;
         }
@@ -80,6 +80,7 @@ namespace Hotfix.Logic.GamePlay
             eleComp.OriginGridPosition = new Vector2Int(x, y);
             eleComp.IsMovable = config.isMovable;
             eleComp.IsMatchable = false;
+            eleComp.IsDamageDirty = false;
 
             // [PositionComponent]
             var posPool = world.GetPool<ElementPositionComponent>();
@@ -132,6 +133,12 @@ namespace Hotfix.Logic.GamePlay
             return entity;
         }
 
+        public bool IsElementCanSelected(ElementType elementType, EcsWorld world, int elementEntity)
+        {
+            return _builders.TryGetValue(ParseLinkElementType(elementType), out var builder) &&
+                   builder.IsElementCanSelected(world, elementEntity);
+        }
+
         /// <summary>
         /// 为了减少构建器的创建，这里将不同的元素类型指向特定的构建器
         /// 由构建器内部再进一步判断
@@ -153,6 +160,9 @@ namespace Hotfix.Logic.GamePlay
                 case ElementType.TowDotsBombDot:
                 case ElementType.TowDotsColoredDot:
                     return ElementType.Bomb;
+                case ElementType.Collect:
+                case ElementType.JumpCollect:
+                    return ElementType.Collect;
                 default:
                     return elementType;
             }

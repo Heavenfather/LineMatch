@@ -9,6 +9,11 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         public bool IsColorDirty;
         public bool IsAnimDirty;
+
+        /// <summary>
+        /// 是否被其他元素处理，如果被其它元素处理，必须要管理它的生命周期
+        /// </summary>
+        public bool IsOtherElementHandleThis;
         /// <summary>
         /// 棋子视图颜色
         /// </summary>

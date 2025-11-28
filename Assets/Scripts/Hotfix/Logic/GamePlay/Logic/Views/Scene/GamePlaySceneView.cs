@@ -29,7 +29,7 @@ namespace Hotfix.Logic.GamePlay
 
                     tcs.TrySetResult();
                 },
-                progressCallBack: (progress) => { /*CommonLoading.ShowLoading(LoadingEnum.Match, progress * 0.6f);*/ });
+                progressCallBack: (progress) => { CommonLoading.ShowLoading(LoadingEnum.Match, progress * 0.6f); });
             return tcs.Task;
         }
 

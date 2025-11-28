@@ -12,6 +12,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsPool<NormalElementComponent> _normalElementPool;
         private EcsPool<ElementRenderComponent> _elementRenderPool;
         private EcsPool<ElementComponent> _elementPool;
+        private EcsPool<DestroyElementTagComponent> _destroyTagPool;
 
         public void Init(IEcsSystems systems)
         {
@@ -21,6 +22,7 @@ namespace Hotfix.Logic.GamePlay
             _normalElementPool = _world.GetPool<NormalElementComponent>();
             _elementRenderPool = _world.GetPool<ElementRenderComponent>();
             _elementPool = _world.GetPool<ElementComponent>();
+            _destroyTagPool = _world.GetPool<DestroyElementTagComponent>();
         }
 
         public void Run(IEcsSystems systems)
@@ -28,6 +30,15 @@ namespace Hotfix.Logic.GamePlay
             foreach (int entity in _filter)
             {
                 ref var normalElementComponent = ref _normalElementPool.Get(entity);
+                // 如果棋子正处于 Acting 状态，又没有被其它元素处理的话，它就自己标签自己死亡
+                ref var elementComponent = ref _elementPool.Get(entity);
+                if (_elementPool.Get(entity).LogicState == ElementLogicalState.Acting && !normalElementComponent.IsOtherElementHandleThis)
+                {
+                    elementComponent.LogicState = ElementLogicalState.Dying;
+                    _destroyTagPool.Add(entity);
+                    continue;
+                }
+                
                 if (normalElementComponent.IsColorDirty)
                 {
                     // 更新视图棋子颜色

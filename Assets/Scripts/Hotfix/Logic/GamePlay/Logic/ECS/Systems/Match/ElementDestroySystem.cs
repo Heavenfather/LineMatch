@@ -65,19 +65,18 @@ namespace Hotfix.Logic.GamePlay
             // 1. 获取棋子位置
             if (!_posPool.Has(entity)) return;
             ref var pos = ref _posPool.Get(entity);
-
-            int gridEntity = _board[pos.X, pos.Y];
-            if (!_gridPool.Has(gridEntity)) return;
-            // 2. 从格子的堆叠列表中移除自己
-            ref var grid = ref _gridPool.Get(gridEntity);
-            if (grid.IsBlank)
-                return;
-            if (grid.StackedEntityIds != null && grid.StackedEntityIds.Contains(entity))
+            // 遍历整个棋盘，找出含有该实体的格子；因为有些棋子是横跨的
+            _board.ForeachBoard(gridEntity =>
             {
-                grid.StackedEntityIds.Remove(entity);
-            }
-
-            // 3. 可能还要更新格子的 IsBlocked 状态等
+                // 2. 从格子的堆叠列表中移除自己
+                ref var grid = ref _gridPool.Get(gridEntity);
+                if (grid.IsBlank)
+                    return;
+                if (grid.StackedEntityIds != null && grid.StackedEntityIds.Contains(entity))
+                {
+                    grid.StackedEntityIds.Remove(entity);
+                }
+            });
         }
 
         private void RecycleView(int entity)

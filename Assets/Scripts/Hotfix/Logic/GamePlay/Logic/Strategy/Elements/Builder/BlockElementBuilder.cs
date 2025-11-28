@@ -9,5 +9,10 @@ namespace Hotfix.Logic.GamePlay
         public void Build(GameStateContext context, int entity, in ElementMap config)
         {
         }
+
+        public bool IsElementCanSelected(EcsWorld world, int entity)
+        {
+            return true;
+        }
     }
 }

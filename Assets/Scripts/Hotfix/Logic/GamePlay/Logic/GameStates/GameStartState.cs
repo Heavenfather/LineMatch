@@ -74,7 +74,15 @@ namespace Hotfix.Logic.GamePlay
                 // ----------- 消除匹配逻辑 这里一定要弄清楚消除的顺序 -------------------------
                 .Add(new MatchAnalysisSystem()) //消除分析
                 .Add(new ActionExecutionSystem()) //消除执行
-                .Add(new ObstacleReactionSystem()) // 障碍物反应
+                // ---------- 不同类型棋子处理 各种棋子对消除执行的反应 ----------------
+                .Add(new LockVisualSystem())
+                .Add(new RocketSystem())
+                .Add(new BombSystem())
+                .Add(new TargetElementSystem())
+                
+                // Normal需要排在最后，因为其它棋子可能需要对它进行处理
+                .Add(new NormalElementSystem())
+                //------- 各个棋子处理完成格子逻辑 统一交由 ElementDestroySystem 执行回收 -------------
                 .Add(new ElementDestroySystem()) // 元素消除
                 .Add(new ProjectileSystem()) //生成新的棋子
                 .Add(new DropAnalysisSystem()) //处理掉落,分析和生产掉落数据
@@ -82,11 +90,6 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new DropElementAnimationSystem()) //掉落元素动画
                 .Add(new PostDropActionSystem()) // 处理掉落渲染处理
 
-                // ---------- 不同类型棋子处理----------------
-                .Add(new LockVisualSystem())
-                .Add(new RocketSystem())
-                .Add(new BombSystem())
-                .Add(new NormalElementSystem())
                 ;
         }
     }

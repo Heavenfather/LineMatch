@@ -7,6 +7,15 @@ namespace Hotfix.Logic.GamePlay
 {
     public static class MatchPosUtil
     {
+        //四方向检测
+        public static readonly Vector2Int[] NeighborDirs = new[]
+        {
+            new Vector2Int(0, 1), // 上
+            new Vector2Int(-1, 0), // 左
+            new Vector2Int(1, 0), // 右
+            new Vector2Int(0, -1), // 下
+        };
+        
         public static readonly Vector2Int[] EightNeighborDirs = new[]
         {
             Vector2Int.up,
@@ -90,5 +99,7 @@ namespace Hotfix.Logic.GamePlay
 
             return neighbor;
         }
+        
+        // public static 
     }
 }

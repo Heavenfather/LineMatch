@@ -138,11 +138,8 @@ namespace Hotfix.Logic.GamePlay
             {
                 GenItemsData = genData
             };
-            var genItemAction = new AtomicAction()
-            {
-                Type = MatchActionType.Spawn2Other,
-                ExtraData = items,
-            };
+            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
+            var genItemAction = factory.CreateAtomicAction(MatchActionType.Spawn2Other, extraData: items);
             actions.Add(genItemAction);
 
             // 2.加分
@@ -296,12 +293,11 @@ namespace Hotfix.Logic.GamePlay
         private AtomicAction AddScoreAction(OneTakeScoreType scoreType, int configId, int count)
         {
             var db = ConfigMemoryPool.Get<BlockDiffScoreDB>();
-            var action = new AtomicAction()
-            {
-                Type = MatchActionType.AddScore,
-                Value = db.CalScore(configId, count, scoreType)
-            };
+            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
+            var action = factory.CreateAtomicAction(MatchActionType.AddScore,
+                value: db.CalScore(configId, count, scoreType));
             return action;
+            
         }
     }
 }

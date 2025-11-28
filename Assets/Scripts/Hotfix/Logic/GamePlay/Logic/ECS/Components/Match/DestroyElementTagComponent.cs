@@ -5,6 +5,14 @@
     /// </summary>
     public struct DestroyElementTagComponent
     {
+        /// <summary>
+        /// 销毁X的坐标 记录被打上销毁的标签的坐标
+        /// </summary>
+        public int X;
         
+        /// <summary>
+        /// 销毁Y的坐标
+        /// </summary>
+        public int Y;
     }
 }

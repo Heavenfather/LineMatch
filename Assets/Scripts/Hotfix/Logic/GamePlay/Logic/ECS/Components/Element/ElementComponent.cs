@@ -67,6 +67,11 @@ namespace Hotfix.Logic.GamePlay
         /// 是否可进行普通匹配
         /// </summary>
         public bool IsMatchable;
+
+        /// <summary>
+        /// 是否受击了
+        /// </summary>
+        public bool IsDamageDirty;
         
         /// <summary>
         /// 棋子逻辑状态

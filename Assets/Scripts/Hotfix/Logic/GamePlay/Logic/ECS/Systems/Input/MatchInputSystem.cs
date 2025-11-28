@@ -246,7 +246,7 @@ namespace Hotfix.Logic.GamePlay
                 int index = input.SelectedGridIds.IndexOf(nextGridEntity);
                 // 排除倒数第一（自己）和倒数第二（回退），剩下的都是“更早的点”
                 // 只要连到更早的点，且是邻居，就是闭环
-                if (index >= 0 && index < input.SelectedGridIds.Count - 1) // -1 是为了排除自己
+                if (input.SelectedGridIds.Count >= 4 && index >= 0 && index < input.SelectedGridIds.Count - 1) // -1 是为了排除自己
                 {
                     // 还需要检查是否是邻居
                     int lastGrid = input.SelectedGridIds[^1];

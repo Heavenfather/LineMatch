@@ -1,4 +1,6 @@
-﻿using HotfixLogic.Match;
+﻿using System;
+using System.Collections.Generic;
+using HotfixLogic.Match;
 using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
@@ -11,7 +13,8 @@ namespace Hotfix.Logic.GamePlay
     {
         private int[] _boardEntities;
         private GameObject[] _gameObjects;
-        
+        private Dictionary<int, bool> _idx2HaveEntity = new Dictionary<int, bool>(); //索引映射该实体是否为空格子，true=空格子，false=非空格子
+
         public LevelData LevelData { get; private set; }
 
         public int this[int x, int y]
@@ -19,6 +22,7 @@ namespace Hotfix.Logic.GamePlay
             get => this[ParseIndex(x, y)];
             private set => this[ParseIndex(x, y)] = value;
         }
+
         public int this[Vector2Int position]
         {
             get => this[position.x, position.y];
@@ -31,6 +35,14 @@ namespace Hotfix.Logic.GamePlay
             private set => _boardEntities[index] = value;
         }
 
+        public bool IsValid(int x, int y)
+        {
+            int index = ParseIndex(x, y);
+            if (_idx2HaveEntity.ContainsKey(index))
+                return _idx2HaveEntity[index] == false;
+            return false;
+        }
+
         public int Width { get; private set; }
 
         public int Height { get; private set; }
@@ -39,10 +51,38 @@ namespace Hotfix.Logic.GamePlay
         {
             Reset(levelData);
         }
-        
-        public void RegisterGridEntity(int x, int y, int entity)
+
+        public void ForeachBoard(Action<int> func)
         {
-            this[x, y] = entity;
+            for (int i = 0; i < _boardEntities.Length; i++)
+            {
+                func(_boardEntities[i]);
+            }
+        }
+
+        public bool TryGetGridEntity(int x, int y, out int entity, bool includeBlank = false)
+        {
+            entity = -1;
+            int index = ParseIndex(x, y);
+            if (_idx2HaveEntity.TryGetValue(index, out var isBlank))
+            {
+                if (!includeBlank && isBlank)
+                {
+                    return false;
+                }
+
+                entity = this[index];
+                return true;
+            }
+
+            return false;
+        }
+
+        public void RegisterGridEntity(int x, int y, int entity, bool isBlank)
+        {
+            int index = ParseIndex(x, y);
+            this[index] = entity;
+            _idx2HaveEntity[index] = isBlank;
         }
 
         public void RegisterViewInstance(int x, int y, GameObject instance)
@@ -68,6 +108,7 @@ namespace Hotfix.Logic.GamePlay
         {
             _boardEntities = null;
             _gameObjects = null;
+            _idx2HaveEntity.Clear();
         }
 
         public int ParseIndex(int x, int y)
@@ -79,6 +120,5 @@ namespace Hotfix.Logic.GamePlay
         {
             return new Vector2Int(index / Height, index % Height);
         }
-        
     }
 }

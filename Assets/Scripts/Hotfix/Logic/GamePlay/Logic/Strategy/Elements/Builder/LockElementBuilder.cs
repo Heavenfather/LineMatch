@@ -26,5 +26,10 @@ namespace Hotfix.Logic.GamePlay
                 world.GetPool<IceComponent>().Add(entity);
             }
         }
+
+        public bool IsElementCanSelected(EcsWorld world, int entity)
+        {
+            return true;
+        }
     }
 }

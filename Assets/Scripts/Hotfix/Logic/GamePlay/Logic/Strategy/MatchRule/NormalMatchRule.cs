@@ -16,28 +16,22 @@ namespace Hotfix.Logic.GamePlay
                 rule.Evaluate(ctx, ref outActions);
                 return;
             }
-            
+
+            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
             // 遍历所有连线的棋子
             foreach (var entity in ctx.Request.InvolvedEntities)
             {
                 // 1. 生成扣次数指令
                 ref var positionPos = ref ctx.World.GetPool<ElementPositionComponent>().Get(entity);
-                outActions.Add(new AtomicAction
-                {
-                    Type = MatchActionType.Damage,
-                    TargetEntity = entity,
-                    Value = 1,
-                    GridPos = new Vector2Int(positionPos.X, positionPos.Y)
-                });
+                outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage,
+                    new Vector2Int(positionPos.X, positionPos.Y), 1,
+                    entity));
             }
 
             // 2. 生成加分指令 
             BlockDiffScoreDB db = ConfigMemoryPool.Get<BlockDiffScoreDB>();
-            outActions.Add(new AtomicAction
-            {
-                Type = MatchActionType.AddScore,
-                Value = db.CalScoreNotRect(ctx.Request.ConfigId,ctx.Request.InvolvedEntities.Count)
-            });
+            outActions.Add(factory.CreateAtomicAction(MatchActionType.AddScore,
+                value: db.CalScoreNotRect(ctx.Request.ConfigId, ctx.Request.InvolvedEntities.Count)));
         }
 
         /// <summary>
@@ -53,6 +47,7 @@ namespace Hotfix.Logic.GamePlay
             {
                 return rule;
             }
+
             return null;
         }
     }

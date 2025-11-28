@@ -50,7 +50,7 @@ namespace Hotfix.Logic.GamePlay
                     gridComp.StackedEntityIds = new List<int>();
 
                     // 注册到 Board 查找表
-                    _context.Board.RegisterGridEntity(x, y, gridEntity);
+                    _context.Board.RegisterGridEntity(x, y, gridEntity,gridComp.IsBlank);
                 }
             }
         }

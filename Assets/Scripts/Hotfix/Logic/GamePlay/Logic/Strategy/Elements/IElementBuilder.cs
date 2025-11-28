@@ -17,5 +17,13 @@ namespace Hotfix.Logic.GamePlay
         /// 执行构建
         /// </summary>
         void Build(GameStateContext context, int entity, in ElementMap config);
+
+        /// <summary>
+        /// 当元素被爆到时，它能否被选中做销毁操作
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        bool IsElementCanSelected(EcsWorld world, int entity);
     }
 }

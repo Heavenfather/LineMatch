@@ -73,6 +73,11 @@ namespace Hotfix.Logic.GamePlay
             eleComponent.IsMatchable = true;
         }
 
+        public bool IsElementCanSelected(EcsWorld world, int entity)
+        {
+            return true;
+        }
+
         private int RandomInitColor(int[] colorIds, int[] weights)
         {
             //先简单处理 TODO....

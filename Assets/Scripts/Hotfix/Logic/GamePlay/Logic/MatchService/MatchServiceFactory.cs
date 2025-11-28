@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using GameCore.Log;
 using HotfixCore.Utils;
+using UnityEngine;
+using Logger = GameCore.Log.Logger;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -58,9 +59,31 @@ namespace Hotfix.Logic.GamePlay
 
             if (_matchRules.TryGetValue(ruleType, out var rule))
                 return rule;
-            
+
             Logger.Error($"MatchServiceFactory: 未实现的匹配规则类型 {ruleType}");
             return null;
+        }
+
+        /// <summary>
+        /// 创建原子级别的消除Action
+        /// </summary>
+        /// <param name="type">类型 必传</param>
+        /// <param name="gridPos">作用到的格子坐标 必传</param>
+        /// <param name="value">作用参数 必传</param>
+        /// <param name="targetEntity">作用到的对象 可选为指定的对象</param>
+        /// <param name="extraData">额外参数 可选</param>
+        /// <returns></returns>
+        public AtomicAction CreateAtomicAction(MatchActionType type, Vector2Int gridPos = default, int value = 0,
+            int targetEntity = -1, object extraData = null)
+        {
+            return new AtomicAction
+            {
+                Type = type,
+                TargetEntity = targetEntity,
+                GridPos = gridPos,
+                Value = value,
+                ExtraData = extraData
+            };
         }
     }
 }

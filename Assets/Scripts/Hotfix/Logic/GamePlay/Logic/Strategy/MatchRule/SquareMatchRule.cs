@@ -7,20 +7,18 @@ namespace Hotfix.Logic.GamePlay
     public class SquareMatchRule : IMatchRule
     {
         public MatchRequestType RuleKey => MatchRequestType.PlayerSquare;
-        
+
         public void Evaluate(MatchRuleContext ctx, ref List<AtomicAction> outActions)
         {
+            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
             // 1.遍历所有连线的棋子 包括同色的棋子
             foreach (var entity in ctx.Request.InvolvedEntities)
             {
                 // 生成扣次数指令
-                outActions.Add(new AtomicAction
-                {
-                    Type = MatchActionType.Damage,
-                    TargetEntity = entity,
-                    Value = 1
-                });
+                ref var comp = ref ctx.World.GetPool<ElementComponent>().Get(entity);
+                outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, comp.OriginGridPosition, 1, entity));
             }
+
             // 所有同色的
             EcsFilter normalElementFilter = ctx.World.Filter<NormalElementComponent>().Include<ElementComponent>()
                 .Include<ElementRenderComponent>().End();
@@ -30,12 +28,8 @@ namespace Hotfix.Logic.GamePlay
                 if (ele.LogicState == ElementLogicalState.Idle && ele.ConfigId == ctx.Request.ConfigId)
                 {
                     // 生成扣次数指令
-                    outActions.Add(new AtomicAction
-                    {
-                        Type = MatchActionType.Damage,
-                        TargetEntity = entity,
-                        Value = 1
-                    });
+                    outActions.Add(
+                        factory.CreateAtomicAction(MatchActionType.Damage, ele.OriginGridPosition, 1, entity));
                 }
             }
 
@@ -44,14 +38,12 @@ namespace Hotfix.Logic.GamePlay
             if (closedPaths == null || closedPaths.Count < 4)
             {
                 BlockDiffScoreDB db = ConfigMemoryPool.Get<BlockDiffScoreDB>();
-                outActions.Add(new AtomicAction
-                {
-                    Type = MatchActionType.AddScore,
-                    Value = db.CalScoreNotRect(ctx.Request.ConfigId, ctx.Request.InvolvedEntities.Count)
-                });
+                outActions.Add(factory.CreateAtomicAction(MatchActionType.AddScore,
+                    value: db.CalScoreNotRect(ctx.Request.ConfigId, ctx.Request.InvolvedEntities.Count)));
+
                 return;
             }
-            
+
             // 3.通过闭环的周长匹配生成规则
             var actions = ctx.MatchService.MatchRuleAction(ctx, closedPaths);
             if (actions != null)
@@ -77,7 +69,7 @@ namespace Hotfix.Logic.GamePlay
                 ref var posComp = ref positionComponent.Get(entity);
                 allLineEntitiesCoord.Add(new Vector2Int(posComp.X, posComp.Y));
             }
-            
+
             var lastCoord = allLineEntitiesCoord[^1];
             // 排除最后两个格子是因为最后两个格子总是相邻的（连线路径）
             for (int i = 0; i < allLineEntitiesCoord.Count - 2; i++)
@@ -93,9 +85,11 @@ namespace Hotfix.Logic.GamePlay
                     {
                         result.Add(allLineEntitiesCoord[j]);
                     }
+
                     return result;
                 }
             }
+
             return null;
         }
     }

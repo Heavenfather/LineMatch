@@ -1,4 +1,5 @@
-﻿using HotfixLogic.Match;
+﻿using System;
+using HotfixLogic.Match;
 using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
@@ -24,6 +25,16 @@ namespace Hotfix.Logic.GamePlay
         /// <returns>单元格</returns>
         int this[int index] { get; }
 
+        int this[Vector2Int position] { get; }
+
+        /// <summary>
+        /// 获取棋盘单元格是否合法
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns></returns>
+        bool IsValid(int x, int y);
+
         /// <summary>
         /// 棋盘宽度
         /// </summary>
@@ -40,6 +51,18 @@ namespace Hotfix.Logic.GamePlay
         void Initialize(LevelData levelData);
 
         /// <summary>
+        /// 遍历棋盘实体
+        /// </summary>
+        /// <param name="func"></param>
+        void ForeachBoard(Action<int> func);
+
+        /// <summary>
+        /// 尝试获取棋盘单元格元素实体
+        /// </summary>
+        /// <returns></returns>
+        bool TryGetGridEntity(int x, int y, out int entity,bool includeBlank = false);
+
+        /// <summary>
         /// 重置棋盘
         /// 重刷整个棋盘数据
         /// </summary>
@@ -52,16 +75,17 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="entity"></param>
-        void RegisterGridEntity(int x, int y, int entity);
-        
+        /// <param name="isBlank">是否空格子</param>
+        void RegisterGridEntity(int x, int y, int entity,bool isBlank);
+
         /// <summary>
         /// 注册棋盘单元格视图实例
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="instance"></param>
-        void RegisterViewInstance(int x,int y,GameObject instance);
-        
+        void RegisterViewInstance(int x, int y, GameObject instance);
+
         /// <summary>
         /// 获取棋盘单元格视图实例
         /// 提供快速获取实例的接口
