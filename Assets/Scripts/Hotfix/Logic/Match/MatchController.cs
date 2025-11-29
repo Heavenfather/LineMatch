@@ -75,28 +75,28 @@ namespace HotfixLogic
             InitData();
             await EnterMatch();
 
-            // CommonLoading.ShowLoading(LoadingEnum.Match, 1.0f, () => { 
-            //     G.EventModule.DispatchEvent(GameEventDefine.OnMatchLoadingFinish); 
-            //
-            //     if (MatchManager.Instance.MaxLevel <= ConfigMemoryPool.Get<ConstConfigDB>().GetConfigIntVal("ContinueLevel")) {
-            //         HotUpdateManager.Instance.Hide();
-            //     }
-            //
-            //     // 新手引导不调用连胜道具
-            //     if (!GridSystem.GetExecuteGuideLevel()) {
-            //         
-            //         ShowTargetAnim(() => {
-            //             G.UIModule.ScreenLock(MatchConst.MatchShowTarget, false);
-            //
-            //             GuideManager.Instance.PlayMatchGuide(_matchData);
-            //             if (!GuideManager.Instance.IsGuiding()) {
-            //                 MatchManager.Instance.GameBeginUseElements();
-            //             } else {
-            //                 G.UIModule.ScreenLock(MatchConst.MatchLockByGenNew, true, 0.3f);
-            //             }
-            //         });
-            //     }
-            // });
+            CommonLoading.ShowLoading(LoadingEnum.Match, 1.0f, () => { 
+                G.EventModule.DispatchEvent(GameEventDefine.OnMatchLoadingFinish); 
+
+                if (MatchManager.Instance.MaxLevel <= ConfigMemoryPool.Get<ConstConfigDB>().GetConfigIntVal("ContinueLevel")) {
+                    HotUpdateManager.Instance.Hide();
+                }
+
+                // 新手引导不调用连胜道具
+                if (!GridSystem.GetExecuteGuideLevel()) {
+                    
+                    ShowTargetAnim(() => {
+                        G.UIModule.ScreenLock(MatchConst.MatchShowTarget, false);
+
+                        GuideManager.Instance.PlayMatchGuide(_matchData);
+                        if (!GuideManager.Instance.IsGuiding()) {
+                            MatchManager.Instance.GameBeginUseElements();
+                        } else {
+                            G.UIModule.ScreenLock(MatchConst.MatchLockByGenNew, true, 0.3f);
+                        }
+                    });
+                }
+            });
 
             _window.UpdateLv();
 
@@ -447,7 +447,7 @@ namespace HotfixLogic
 
                 items = new List<ItemData>(10) { new ItemData("star", starCount) };
 
-                if (coinCount > 0) items.Add(new ItemData("coin", coinCount));
+                if (coinCount > 0) items.Add(new ItemData("coin`", coinCount));
                 if (IsCanAddUnlockReward(MatchManager.Instance.CurLevelID, out string rewardList))
                 {
                     if (!string.IsNullOrEmpty(rewardList))

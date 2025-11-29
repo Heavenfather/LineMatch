@@ -52,6 +52,8 @@ public class GridLastStepPrompt : MonoBehaviour
 
         _blockCoords.Clear();
 
+        bool xiongMaoFinish = LevelTargetSystem.Instance.CheckTargetComplete(130);
+
 
         for (int i = 0; i < _gridCol; i++) {
             for (int j = 0; j < _gridRow; j++) {
@@ -64,6 +66,11 @@ public class GridLastStepPrompt : MonoBehaviour
 
                         if(element.Data.ElementType != ElementType.Normal &&!ElementSystem.Instance.IsSpecialElement(element.Data.ElementType)
                             && element.Data.ElementType != ElementType.Coin) {
+
+                            if (xiongMaoFinish && element.Data.ConfigId == 130) {
+                                continue;
+                            }
+
                             _blockCoords.Add(coord);
                             break;
                         }

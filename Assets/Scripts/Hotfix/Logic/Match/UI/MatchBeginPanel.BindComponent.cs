@@ -13,6 +13,7 @@ namespace HotfixLogic
 	public partial class MatchBeginPanel
 	{
 		private GameObject go_property;
+		private CommonWidgetProperty widget_property;
 		private GameObject go_root;
 		private GameObject go_normal;
 		private TextMeshProUGUI text_levelNormal;
@@ -45,6 +46,7 @@ namespace HotfixLogic
 		public override void ScriptGenerate()
 		{
 			go_property = VariableArray.Get<RectTransform>(0).gameObject;
+			widget_property = base.CreateWidget<CommonWidgetProperty>(VariableArray.Get<RectTransform>(1).gameObject,VariableArray.Get<RectTransform>(1).gameObject.activeSelf);
 			go_root = VariableArray.Get<RectTransform>(2).gameObject;
 			go_normal = VariableArray.Get<RectTransform>(3).gameObject;
 			text_levelNormal = VariableArray.Get<TextMeshProUGUI>(4);

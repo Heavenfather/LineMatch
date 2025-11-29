@@ -12,6 +12,7 @@ namespace HotfixLogic
 {
 	public partial class MatchItem
 	{
+		private CommonRewardItem widget_item;
 		private Image img_numBg;
 		private Button btn_add;
 		private TextMeshProUGUI text_num;
@@ -22,6 +23,7 @@ namespace HotfixLogic
 
 		public override void ScriptGenerate()
 		{
+			widget_item = base.CreateWidget<CommonRewardItem>(VariableArray.Get<RectTransform>(0).gameObject,VariableArray.Get<RectTransform>(0).gameObject.activeSelf);
 			img_numBg = VariableArray.Get<Image>(1);
 			btn_add = VariableArray.Get<Button>(2);
 			text_num = VariableArray.Get<TextMeshProUGUI>(3);

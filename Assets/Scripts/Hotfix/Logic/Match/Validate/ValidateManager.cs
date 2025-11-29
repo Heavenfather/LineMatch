@@ -729,6 +729,7 @@ namespace HotfixLogic.Match
                         continue;
                     newGenRocketCoord.Add(coord);
                 }
+                context.AddCalAddedCount(elementId, newGenRocketCoord.Count);
             }
 
             newGenRocketCoord.Add(colorBallGridItem.Data.Coord);
@@ -849,6 +850,7 @@ namespace HotfixLogic.Match
                         continue;
                     newGenRocketCoord.Add(coord);
                 }
+                context.AddCalAddedCount(elementId, newGenRocketCoord.Count);
 
                 //彩色球自身也会形成
                 newGenRocketCoord.Add(colorBallGridItem.Data.Coord);

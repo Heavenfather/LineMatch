@@ -137,7 +137,7 @@ namespace HotfixLogic.Match
             MatchGameType matchGameType = MatchManager.Instance.CurrentMatchGameType;
             if (matchGameType == MatchGameType.TowDots)
             {
-                var enclosedItems = GetEnclosedGridItems(closedLoop, minY, maxY);
+                var enclosedItems = GetEnclosedGridItems(context,closedLoop, minY, maxY);
                 if (enclosedItems is { Count: > 0 })
                 {
                     for (int i = 0; i < enclosedItems.Count; i++)
@@ -147,6 +147,8 @@ namespace HotfixLogic.Match
 
                     context.IsAutoReleaseBomb = true;
                 }
+                int score = db.CalScore(_matchElementId, _matchCount, OneTakeScoreType.FourRect);
+                MatchManager.Instance.AddScore(score);
                 return;
             }
     
@@ -206,7 +208,7 @@ namespace HotfixLogic.Match
             return null; // 未找到闭环
         }
 
-        private List<Vector2Int> GetEnclosedGridItems(List<GridItem> closedLoopGrids, int minY, int maxY)
+        private List<Vector2Int> GetEnclosedGridItems(ElementDestroyContext context,List<GridItem> closedLoopGrids, int minY, int maxY)
         {
             var enclosedItems = new List<Vector2Int>();
             if (closedLoopGrids == null || closedLoopGrids.Count < 4)
@@ -271,8 +273,9 @@ namespace HotfixLogic.Match
                             var elements = ElementSystem.Instance.GetGridElements(pt, false);
                             if(elements == null || elements.Count == 0)
                                 continue;
-                            if (ElementSystem.Instance.TryGetBaseElement(elements, out _))
+                            if (ElementSystem.Instance.TryGetBaseElement(elements, out var index))
                             {
+                                context.AddCalAddedCount(elements[index].Data.ConfigId, 1);
                                 enclosedItems.Add(pt);
                             }
                         }

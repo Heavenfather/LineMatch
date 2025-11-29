@@ -144,7 +144,7 @@ namespace HotfixLogic.Match
                                 tempRates[i] += bonus;
                             }
                         }
-                        currentRates = tempRates; // 使用修改后的概率
+                        currentRates = tempRates; // 使用修改后的概率 从修改后的概率中再随机抽取棋子
                     }
                 }
                 

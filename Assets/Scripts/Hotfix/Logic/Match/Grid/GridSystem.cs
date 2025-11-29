@@ -69,9 +69,19 @@ namespace HotfixLogic.Match
                             }
                         }
                     }
+
+                    if (_tipsTimerId > 0)
+                    {
+                        G.TimerModule.Stop(_tipsTimerId);
+                    }
+                    PauseFingerTipsTween();
                 }
                 else
                 {
+                    if (_tipsTimerId > 0)
+                    {
+                        G.TimerModule.Resume(_tipsTimerId);
+                    }
                     StopUsingItemTipsTween();
                 }
                 _isUsingItemState = value;
@@ -152,6 +162,7 @@ namespace HotfixLogic.Match
             G.EventModule.AddEventListener<EventOneParam<BoardColorStruck>>(GameEventDefine.OnOkChangeBoardColor,OnOkChangeBoardColor,this);
             G.EventModule.AddEventListener(GameEventDefine.OnMatchUseItemFail, OnMatchUseItemFail, this);
             G.EventModule.AddEventListener<EventTwoParam<int, Vector2Int>>(GameEventDefine.OnMatchUseItemSuccess, OnMatchUseItemSuccess, this);
+            G.EventModule.AddEventListener<EventOneParam<int>>(GameEventDefine.OnMatchCollectFinishTarget, OnMatchCollectFinishTarget, this);
 
 
             var constDB = ConfigMemoryPool.Get<ConstConfigDB>();
@@ -174,6 +185,24 @@ namespace HotfixLogic.Match
             if(grid == null)
                 return;
             OnUseItem(obj.Arg1, grid);
+        }
+
+        private void OnMatchCollectFinishTarget(EventOneParam<int> param) {
+            var targetId = param.Arg;
+
+            // if (targetId == 129) {
+            //     SetBoxElementFinish().Forget();
+            // }
+        }
+
+        private async UniTask SetBoxElementFinish() {
+            await UniTask.Delay(TimeSpan.FromSeconds(0.2f));
+
+            var elements = ElementSystem.Instance.GetAllElementsById(130);
+            foreach (var element in elements)
+            {
+                (element as BlockElementItem).LoadBoxSprite(true);
+            }
         }
 
         private void OnMatchUseItemFail()
@@ -512,15 +541,16 @@ namespace HotfixLogic.Match
                 
             
             _levelData = levelData;
+            _remainStep = _levelData.stepLimit;
             _lastStepPrompt.SetGridSize(_levelData.gridCol, _levelData.gridRow);
-            _difficultyModifyData = LevelManager.Instance.CalDifficultyChangeRate();
-            if(isGuide || MatchManager.Instance.IsEnterByEditor())
-            {
-                //关卡编辑器进入不做任何调整
-                _difficultyModifyData.DifficultyType = LevelDifficultyType.None;
-            }
+            // _difficultyModifyData = LevelManager.Instance.CalDifficultyChangeRate();
+            // if(isGuide || MatchManager.Instance.IsEnterByEditor())
+            // {
+            //     //关卡编辑器进入不做任何调整
+            //     _difficultyModifyData.DifficultyType = LevelDifficultyType.None;
+            // }
             MatchTweenUtil.Init(this);
-            LevelManager.Instance.ModifyLevelDropRate(ref _levelData, _difficultyModifyData);
+            // LevelManager.Instance.ModifyLevelDropRate(ref _levelData, _difficultyModifyData);
             if (!_isExecuteGuideLevel)
             {
                 _guideLevelBg.SetVisible(false);
@@ -666,6 +696,9 @@ namespace HotfixLogic.Match
             ElementSystem.Instance.Restart();
             _levelData.Clear();
             IsUsingItemState = false;
+            _oneStepSequence?.Kill();
+            _oneStepSequence = null;
+            _guidePathCoords?.Clear();
             ClearGuide();
             StopOrResumeTipsTimer(true);
             
@@ -1027,8 +1060,9 @@ namespace HotfixLogic.Match
             var useBooster = param.Arg1;
             var winstreakBooster = param.Arg2;
 
-            if (useBooster.Count <= 0 && winstreakBooster.Count <= 0)
+            if ((useBooster == null || winstreakBooster == null) || (useBooster.Count <= 0 && winstreakBooster.Count <= 0))
             {
+                RefreshMatchTips();
                 return;
             }
 
@@ -1088,7 +1122,7 @@ namespace HotfixLogic.Match
                 }
 
                 // 根据动态关卡难度调整概率
-                LevelManager.Instance.ModifyGenerateItemRate(ref rateArr, _difficultyModifyData);
+                // LevelManager.Instance.ModifyGenerateItemRate(ref rateArr, _difficultyModifyData);
 
                 var rateValue = random.Next(0, rateArr.Sum());
                 Logger.Debug("随机值：" + rateValue);
@@ -1233,6 +1267,7 @@ namespace HotfixLogic.Match
                     var grid = GetGridByCoord(coord);
                     grid.PushElement(elementItem, doDestroy: true);
                     elementItem.GameObject.transform.localPosition = Vector3.zero;
+                    RefreshMatchTips();
 
                     G.UIModule.ScreenLock(MatchConst.MatchDoneLockReason, false);
                 };

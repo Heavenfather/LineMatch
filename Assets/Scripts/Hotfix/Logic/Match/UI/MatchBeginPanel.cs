@@ -145,6 +145,29 @@ namespace HotfixLogic
 			go_mask.SetActive(true);
 			go_property.SetActive(true);
 
+			var targetPos = img_live.transform.position;
+			var beginPos = widget_property.GetLivePos();
+
+			img_flyLive.gameObject.SetActive(true);
+			img_flyLive.transform.position = beginPos;
+			go_eff.transform.position = targetPos;
+
+
+			var centerY = (beginPos.y + targetPos.y) * 0.2f;
+
+			var pathPos = new Vector3(beginPos.x - 1f, centerY, beginPos.z);
+			Vector3[] path = new Vector3[] { pathPos,  targetPos};
+
+			var seq = DOTween.Sequence();
+			seq.AppendInterval(0.15f);
+			seq.Append(img_flyLive.transform.DOPath(path, 0.4f, PathType.CatmullRom).SetEase(Ease.InSine));
+			seq.AppendCallback(() => {
+				go_eff.SetActive(true);
+			});
+			seq.AppendInterval(0.2f);
+			seq.AppendCallback(() => {
+				BeginGame();
+			});
 		}
 
 		private void BeginGame() {

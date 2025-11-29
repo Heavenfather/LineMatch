@@ -174,7 +174,8 @@ namespace HotfixLogic.Match
             DoFingerTweenPlay(coords, needChangeLayer, showFinger:showFinger);
         }
         
-        private void DoFingerTweenPlay(Vector2Int[] coords, bool needChangeLayer = true, float delayTime = 0.35f, bool isLoop = true, bool showFinger = true, float moveDur = 0.2f)
+        private void DoFingerTweenPlay(Vector2Int[] coords, bool needChangeLayer = true, float delayTime = 0.35f, 
+                                            bool isLoop = true, bool showFinger = true, float moveDur = 0.2f, float beginDelay = 0.5f)
         {
             if(_isTouching)
                 return;
@@ -214,7 +215,7 @@ namespace HotfixLogic.Match
             fingerSp.DOFade(0, 0);
     
             var fingerMoveTween = DOTween.Sequence();
-            fingerMoveTween.AppendInterval(0.5f);
+            fingerMoveTween.AppendInterval(beginDelay);
             fingerMoveTween.AppendCallback(() => {
                 SetFingerVisible(true && showFinger);
             });
@@ -302,11 +303,11 @@ namespace HotfixLogic.Match
             {
                 fingerMoveTween.SetEase(Ease.Linear).SetAutoKill(false).Pause();
                 _guideFingerTween = DOTween.Sequence().Append(fingerMoveTween).AppendInterval(0.5f).
-                    AppendCallback(OnFingerMoveComplete).AppendInterval(GetTipsTimerDuration()).
-                    AppendCallback(() =>
-                    {
-                        SetFingerVisible(true);
-                    }).SetLoops(-1);
+                    AppendCallback(OnFingerMoveComplete).OnComplete(()=>{
+                        _guideFingerTween?.Kill();
+                        _guideFingerTween = null;
+                        SetFingerVisible(false);
+                    });
             }
             _guideFingerTween.Play();
         }
@@ -378,7 +379,7 @@ namespace HotfixLogic.Match
                 LineController.Instance.AddUnderPoint(GetGridPositionByCoord(_guidePathCoords[0].x,
                     _guidePathCoords[0].y));
 
-                SetFingerVisible(true);
+                // SetFingerVisible(true);
                 _guideFingerTween.Restart();
             }
         }
@@ -425,7 +426,17 @@ namespace HotfixLogic.Match
 
         private void ClearGuide()
         {
-            KillOnStepTween();
+            // KillOnStepTween();
+            if (_oneStepSequence != null && _oneStepSequence.IsPlaying())
+            {
+                _oneStepSequence.Pause();
+                SetFingerVisible(false);
+                
+                for (int j = 0; j < _guidePathCoords.Count; j++)
+                {
+                    SetCoordElementScale(_guidePathCoords[j], 0f, 1.0f);
+                }
+            }
             SetPauseOrRestartGuide(true);
         }
 
@@ -616,9 +627,12 @@ namespace HotfixLogic.Match
 
         private void SetFingerVisible(bool visible)
         {
-            _guideFinger.SetVisible(visible);
-            _guideFinger.transform.GetComponent<SpriteRenderer>().color = Color.white;
-            _guideFinger.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.white;
+            if (_guideFinger != null && _guideFinger.transform != null)
+            {
+                _guideFinger.SetVisible(visible);
+                _guideFinger.transform.GetComponent<SpriteRenderer>().color = Color.white;
+                _guideFinger.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.white;
+            }
         }
     }
 }

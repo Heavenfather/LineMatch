@@ -1,15 +1,5 @@
 ﻿namespace HotfixLogic.Match
 {
-    // 定义调控策略类型
-    public enum DifficultyStrategyType
-    {
-        None = 0,
-        ColorRegularity = 1, // 策略1: 棋子规整度
-        NeighborConsistency = 2, // 策略2: 相邻棋子同色概率
-        IndependentRatio = 3, // 策略3: 开局不连通独立棋子分布
-        SquareFormation = 4 // 策略4: 掉落形成方格
-    }
-
     // 难度调节方向
     public enum DifficultyDirection
     {

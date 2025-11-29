@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using GameConfig;
 using GameCore.Singleton;
+using Hotfix.Define;
+using Hotfix.Utils;
 using UnityEngine;
+using Logger = GameCore.Log.Logger;
 using Random = UnityEngine.Random;
 
 namespace HotfixLogic.Match
@@ -57,20 +61,25 @@ namespace HotfixLogic.Match
         private Dictionary<DifficultyStrategyType, int> _activeStrategyLevels =
             new Dictionary<DifficultyStrategyType, int>(); // 记录每个策略生效的等级 (0, 1, 2)
 
+        //记录每个分数变化的数据
+        private Dictionary<string, float> _scoreChangedLogEventData = new Dictionary<string, float>();
+
         private LevelData _curLevelData = null;
+
+        private StringBuilder _sb = new StringBuilder();
 
         // 保存当前的触发上下文
         private DifficultyTriggerContext _lastContext;
 
-        private int _levelUsingItemValue = 0;
+        private int _levelUsingItemLevel = 0;
 
         /// <summary>
-        /// 关卡使用道具后的增幅值
+        /// 上次使用道具的关卡
         /// </summary>
-        /// <param name="value"></param>
-        public void SetUsingItemValue(int value)
+        /// <param name="level"></param>
+        public void SetUsingItemValue(int level)
         {
-            _levelUsingItemValue = value;
+            _levelUsingItemLevel = level;
         }
 
         public DifficultyTriggerContext CreateContext(in LevelData currentLevel, int remainSteps)
@@ -94,23 +103,99 @@ namespace HotfixLogic.Match
         /// <param name="context">触发条件上下文</param>
         public void CalculateDifficultyStrategies(DifficultyTriggerContext context)
         {
+            var levelType = MatchManager.Instance.CurrentMatchLevelType;
+            if (levelType != MatchLevelType.C && levelType != MatchLevelType.Editor)
+                return;
             _lastContext = context;
-            int oldControlValue = _totalControlValue;
+            float oldControlValue = 0;
+            Dictionary<string, float> oldScoreData = new Dictionary<string, float>(_scoreChangedLogEventData);
+            foreach (var item in oldScoreData)
+            {
+                oldControlValue += item.Value;
+            }
+
             ResetDifficulty();
 
             // 1. 计算总调控值
             int controlValue = CalculateTotalControlValue(context);
+            //对比前后两次的值，发送上报
+            Dictionary<string, float> changedValue = new Dictionary<string, float>();
+            foreach (var item in _scoreChangedLogEventData)
+            {
+                if (oldScoreData.ContainsKey(item.Key))
+                {
+                    if (!Mathf.Approximately(oldScoreData[item.Key], item.Value))
+                    {
+                        changedValue.Add(item.Key, item.Value - oldScoreData[item.Key]);
+                    }
+                }
+            }
+
             // 固定配置值调整
             LevelStrategyDB db = ConfigMemoryPool.Get<LevelStrategyDB>();
             if (db.TryGetValue(context.LevelId, out var value))
                 controlValue += value;
             _totalControlValue = controlValue;
 
+            if (oldControlValue != 0)
+                LogValueChangeEvent(_totalControlValue - oldControlValue, _totalControlValue, changedValue);
+
+
             // 2. 根据调控值抽取策略
             ApplyStrategySelection(controlValue, context);
+            ReportStrategyStatus();
+        }
 
-            // 数据埋点 - 调控值发生变化时
-            // Debug.Log($"[LevelManager] Difficulty Calculated. ControlVal: {controlValue}. Strategies: {GetActiveStrategiesString()}");
+        private void LogValueChangeEvent(float changeValue, int finalValue, Dictionary<string, float> data)
+        {
+            if(changeValue <= 0)
+                return;
+            _sb.Clear();
+            foreach (var item in data)
+            {
+                _sb.Append($"{item.Key}={item.Value}");
+            }
+
+            Dictionary<string, object> eventData = new Dictionary<string, object>();
+            eventData.Add("change_time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            eventData.Add("change_value", changeValue.ToString("F"));
+            eventData.Add("final_value", finalValue);
+            eventData.Add("change_source", _sb.ToString());
+            CommonUtil.LogEvent(LogEventKeyDefine.DifficultyStrategyValueChange, eventData);
+        }
+
+        /// <summary>
+        /// 上报策略生效/失效状态
+        /// </summary>
+        private void ReportStrategyStatus()
+        {
+            _sb.Clear();
+            bool isFirst = true;
+
+            foreach (var kvp in _activeStrategyLevels)
+            {
+                if (kvp.Value > 0)
+                {
+                    if (!isFirst) _sb.Append(" | ");
+
+                    // 获取策略名称 (你可以写个switch case转成中文，或者直接用枚举名)
+                    string strategyName = kvp.Key.ToString();
+                    _sb.Append($"{strategyName} (Lv{kvp.Value})");
+
+                    isFirst = false;
+                }
+            }
+
+            string finalContent = _sb.ToString();
+            if (string.IsNullOrEmpty(finalContent)) finalContent = "None";
+
+            var reportData = new Dictionary<string, object>
+            {
+                { "event_time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
+                { "current_control_val", _totalControlValue }, // 此时调控值
+                { "content", finalContent } // 生效/失效内容
+            };
+            CommonUtil.LogEvent(LogEventKeyDefine.DifficultyStrategyEnableChange, reportData);
         }
 
         /// <summary>
@@ -133,69 +218,47 @@ namespace HotfixLogic.Match
         /// </summary>
         private int CalculateTotalControlValue(DifficultyTriggerContext context)
         {
-            int val = 0;
+            StrategyControlValueDB db = ConfigMemoryPool.Get<StrategyControlValueDB>();
+            float currentTotal = 0;
 
-            // -------- 调控值计算表 就直接在这配了 ----------
+            void AddScore(string sourceName, int baseScore)
+            {
+                if (baseScore <= 0) return;
+                float levelFactor = db.GetLevelCorrection(context.LevelId, sourceName);
+                // 关卡数增幅后的实际变化量
+                float actualChange = baseScore * (1 + levelFactor);
+
+                if (actualChange > 0)
+                {
+                    currentTotal += actualChange; // 累加总分
+
+                    _scoreChangedLogEventData.TryAdd(sourceName, actualChange);
+                    Logger.Debug($"DifficultyStrategyManager] ScoreChanged: {sourceName} = {actualChange}");
+                }
+            }
 
             // --- 关卡剩余步数占比 ---
             if (context.TotalSteps > 0)
             {
                 float stepRatio = (float)context.RemainingSteps / context.TotalSteps;
-                // 当触发调易逻辑时
-                if (stepRatio <= 0.1f) val += 10;
-                else if (stepRatio <= 0.15f) val += 7;
-                else if (stepRatio <= 0.20f) val += 5;
-                else if (stepRatio <= 0.25f) val += 3;
-                else if (stepRatio <= 0.30f) val += 2;
-                else if (stepRatio <= 0.40f) val += 1;
+                int stepScore = db.GetStepControlValue(stepRatio);
 
-                // 关卡数修正
-                float levelFactor = GetLevelCorrectionFactor(context.LevelId);
-
-                val = Mathf.FloorToInt(val * (1 + levelFactor));
+                AddScore("step", stepScore);
             }
 
             // --- 关内使用道具 ---
-            // 当前关5；后一关3；后两关1
-            val += Mathf.FloorToInt(_levelUsingItemValue * (1 + GetLevelCorrectionFactor(context.LevelId)));
+            int useItemLevel = Mathf.Max(0, MatchManager.Instance.MaxLevel - _levelUsingItemLevel);
+            AddScore("useItem", db.GetUseItemControlValue(useItemLevel));
 
             // --- 单关失败次数 ---
-            int failVal = 0;
-            if (context.ConsecutiveFailures >= 4) failVal = 10;
-            else if (context.ConsecutiveFailures == 3) failVal = 5;
-            else if (context.ConsecutiveFailures == 2) failVal = 2;
-            else if (context.ConsecutiveFailures == 1) failVal = 1;
-
-            failVal = Mathf.FloorToInt(failVal * GetLevelCorrectionFactor(context.LevelId));
-            val += failVal;
+            int failVal = db.GetFailControlValue(context.ConsecutiveFailures);
+            AddScore("failCount", failVal);
 
             // --- 回流用户 ---
-            int returnVal = 0;
-            if (context.ReturnUserDays >= 4) returnVal = 8;
-            else if (context.ReturnUserDays == 3) returnVal = 5;
-            else if (context.ReturnUserDays == 2) returnVal = 2;
-            else if (context.ReturnUserDays == 1) returnVal = 1;
-
-            returnVal = Mathf.FloorToInt(returnVal * GetLevelCorrectionFactor(context.LevelId));
-            val += returnVal;
-
-            return val;
+            int returnVal = db.GetUserBackControlValue(context.ReturnUserDays);
+            AddScore("returnUser", returnVal);
+            return Mathf.RoundToInt(currentTotal);
         }
-
-        /// <summary>
-        /// 关卡数区间增幅
-        /// 也直接配置在这了，懒得写配置表
-        /// </summary>
-        /// <param name="levelId"></param>
-        /// <returns></returns>
-        private float GetLevelCorrectionFactor(int levelId)
-        {
-            if (levelId < 50) return 0.8f;
-            if (levelId <= 100) return 0.5f;
-            if (levelId <= 200) return 0.2f;
-            return 0f; // 200关后不再有增幅
-        }
-
 
         /// <summary>
         /// 策略抽取逻辑
@@ -448,8 +511,9 @@ namespace HotfixLogic.Match
                 for (int y = 0; y < rows; y++)
                 {
                     var node = _cachedVBoard[x, y];
-                    if (node.HasData && node.IsNew && node.Ref != null)
+                    if (node.HasData && node.IsNew && node.Ref != null && node.Ref.ConfigId != node.ConfigId)
                     {
+                        // Logger.Debug($"被改了:{node.Ref.GridPos} {node.Ref.ConfigId}=>{node.ConfigId}");
                         node.Ref.ConfigId = node.ConfigId;
                     }
                 }
@@ -494,8 +558,11 @@ namespace HotfixLogic.Match
                         if (gridSystem.IsValidPosition(x, y))
                         {
                             var grid = gridSystem.GetGridByCoord(x, y);
-                            _cachedVBoard[x, y].SetOld(grid.Data.GetTopElement().ConfigId);
-                            writeY = y - 1;
+                            if (grid != null && grid.Data.GetTopElement() != null)
+                            {
+                                _cachedVBoard[x, y].SetOld(grid.Data.GetTopElement().ConfigId);
+                                writeY = y - 1;
+                            }
                         }
 
                         continue;
@@ -510,8 +577,11 @@ namespace HotfixLogic.Match
                         if (writeY >= 0)
                         {
                             var grid = gridSystem.GetGridByCoord(x, y);
-                            _cachedVBoard[x, writeY].SetOld(grid.Data.GetTopElement().ConfigId);
-                            writeY--;
+                            if (grid != null && grid.Data.GetTopElement() != null)
+                            {
+                                _cachedVBoard[x, writeY].SetOld(grid.Data.GetTopElement().ConfigId);
+                                writeY--;
+                            }
                         }
                     }
                 }
@@ -536,6 +606,17 @@ namespace HotfixLogic.Match
         {
             int colorCount = gridSystem.LevelData.dropColor.Length;
 
+            bool IsCanDropCondition(int elementId)
+            {
+                if (gridSystem.LevelData == null || gridSystem.LevelData.dropColor == null) return false;
+                for (int i = 0; i < gridSystem.LevelData.dropColor.Length; i++)
+                {
+                    if (gridSystem.LevelData.dropColor[i] == elementId) return true;
+                }
+
+                return false;
+            }
+
             // --- 策略2：相邻同色 ---
             int[] dirX = { 0, 0, -1, 1 }; // 上 下 左 右
             int[] dirY = { -1, 1, 0, 0 };
@@ -559,7 +640,7 @@ namespace HotfixLogic.Match
                         if (nx >= 0 && nx < cols && ny >= 0 && ny < rows)
                         {
                             var neighbor = _cachedVBoard[nx, ny];
-                            if (neighbor.HasData)
+                            if (neighbor.HasData && IsCanDropCondition(neighbor.ConfigId))
                             {
                                 _cachedNeighborColors.Add(neighbor.ConfigId);
                             }
@@ -576,6 +657,7 @@ namespace HotfixLogic.Match
                         // 随机取色
                         int randIdx = Random.Range(0, _cachedNeighborColors.Count);
                         // 这里修改了 ConfigId，后续遍历到的节点会看到这个新颜色，形成连带效应
+                        // Logger.Debug($"被改了:{node.ConfigId}");
                         node.ConfigId = _cachedNeighborColors[randIdx];
                     }
                 }
@@ -584,11 +666,11 @@ namespace HotfixLogic.Match
             // --- 策略4：四方格 ---
             if (IsSquareFormationActive())
             {
-                ApplySquareStrategyOptimized(rows, cols);
+                ApplySquareStrategyOptimized(rows, cols, IsCanDropCondition);
             }
         }
 
-        private void ApplySquareStrategyOptimized(int rows, int cols)
+        private void ApplySquareStrategyOptimized(int rows, int cols, Func<int, bool> condition)
         {
             // 边界检查：如果棋盘太小，无法形成2x2，直接返回
             if (cols < 2 || rows < 2) return;
@@ -598,6 +680,19 @@ namespace HotfixLogic.Match
             int rangeY = rows - 1;
             int startX = Random.Range(0, rangeX);
             int startY = Random.Range(0, rangeY);
+
+            bool CheckImmutable(VirtualNode node, ref int tgtColor)
+            {
+                if (node.IsImmutable)
+                {
+                    if (!condition(node.ConfigId)) return false;
+
+                    if (tgtColor == -1) tgtColor = node.ConfigId;
+                    else if (tgtColor != node.ConfigId) return false;
+                }
+
+                return true;
+            }
 
             // 2. 遍历棋盘
             for (int i = 0; i < rangeX; i++)
@@ -618,61 +713,58 @@ namespace HotfixLogic.Match
 
                     // 策略核心：至少有一个是新棋子
                     if (!n1.IsNew && !n2.IsNew && !n3.IsNew && !n4.IsNew) continue;
-
+                    // 3. 检查旧棋子
                     int targetColor = -1;
-                    bool conflict = false;
+                    bool conflict = !CheckImmutable(n1, ref targetColor);
+                    if (!conflict && !CheckImmutable(n2, ref targetColor)) conflict = true;
+                    if (!conflict && !CheckImmutable(n3, ref targetColor)) conflict = true;
+                    if (!conflict && !CheckImmutable(n4, ref targetColor)) conflict = true;
 
-                    // 3. 检查旧棋子颜色一致性
-                    // 只要有一个旧棋子颜色不匹配，就视为冲突，放弃这个位置
-                    if (n1.IsImmutable) targetColor = n1.ConfigId;
+                    if (conflict) continue; // 存在障碍物或颜色冲突，跳过此区域
 
-                    if (n2.IsImmutable)
+                    // --- 4. 确定目标颜色 ---
+                    if (targetColor == -1)
                     {
-                        if (targetColor == -1) targetColor = n2.ConfigId;
-                        else if (targetColor != n2.ConfigId) conflict = true;
+                        // 双重保险检查
+                        if (condition(n1.ConfigId))
+                        {
+                            targetColor = n1.ConfigId;
+                        }
+                        else
+                        {
+                            continue;
+                        }
                     }
 
-                    if (!conflict && n3.IsImmutable)
-                    {
-                        if (targetColor == -1) targetColor = n3.ConfigId;
-                        else if (targetColor != n3.ConfigId) conflict = true;
-                    }
+                    // --- 5. 执行修改 ---
+                    bool isModified = false;
 
-                    if (!conflict && n4.IsImmutable)
-                    {
-                        if (targetColor == -1) targetColor = n4.ConfigId;
-                        else if (targetColor != n4.ConfigId) conflict = true;
-                    }
-
-                    if (conflict) continue;
-
-                    // 如果全是新棋子，取当前锚点 n1 的颜色为目标（或者随机一个）
-                    if (targetColor == -1) targetColor = n1.ConfigId;
-
-                    // 4. 执行修改
                     if (n1.IsNew && n1.ConfigId != targetColor)
                     {
                         n1.ConfigId = targetColor;
+                        isModified = true;
                     }
 
                     if (n2.IsNew && n2.ConfigId != targetColor)
                     {
                         n2.ConfigId = targetColor;
+                        isModified = true;
                     }
 
                     if (n3.IsNew && n3.ConfigId != targetColor)
                     {
                         n3.ConfigId = targetColor;
+                        isModified = true;
                     }
 
                     if (n4.IsNew && n4.ConfigId != targetColor)
                     {
                         n4.ConfigId = targetColor;
+                        isModified = true;
                     }
 
-                    // 5. 【即时退出】
-                    // 如果凑成了一个四方格（或者是找到了一个现成的），就立即停止
-                    return; // 只生成一个
+                    // 只要成功处理完一个合法的 2x2 区域，就退出
+                    return;
                 }
             }
         }
@@ -712,7 +804,7 @@ namespace HotfixLogic.Match
         private bool IsSquareFormationActive()
         {
             return _activeStrategyLevels.ContainsKey(DifficultyStrategyType.SquareFormation) &&
-                   _activeStrategyLevels[DifficultyStrategyType.SquareFormation] > 0;
+            _activeStrategyLevels[DifficultyStrategyType.SquareFormation] > 0;
         }
 
         private void EnsureBuffers(int rows, int cols)

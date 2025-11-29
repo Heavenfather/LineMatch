@@ -23,8 +23,8 @@ namespace HotfixLogic
 		private Image img_add1;
 		private Image img_add2;
 		private Image img_add3;
-		// private CommonRewardItem widget_continueItem1;
-		// private CommonRewardItem widget_continueItem2;
+		private CommonRewardItem widget_continueItem1;
+		private CommonRewardItem widget_continueItem2;
 		private GameObject go_winStreak1;
 		private GameObject go_target;
 		private Button btn_close;
@@ -41,7 +41,7 @@ namespace HotfixLogic
 		private TextMeshProUGUI text_buyCoin;
 		private Button btn_free;
 		private GameObject go_property;
-		// private CommonWidgetProperty widget_property;
+		private CommonWidgetProperty widget_property;
 		private Button btn_adv;
 		private TextMeshProUGUI text_advStep;
 		private GameObject go_gift;
@@ -64,8 +64,8 @@ namespace HotfixLogic
 			img_add1 = VariableArray.Get<Image>(8);
 			img_add2 = VariableArray.Get<Image>(9);
 			img_add3 = VariableArray.Get<Image>(10);
-			// widget_continueItem1 = base.CreateWidget<CommonRewardItem>(VariableArray.Get<RectTransform>(11).gameObject,VariableArray.Get<RectTransform>(11).gameObject.activeSelf);
-			// widget_continueItem2 = base.CreateWidget<CommonRewardItem>(VariableArray.Get<RectTransform>(12).gameObject,VariableArray.Get<RectTransform>(12).gameObject.activeSelf);
+			widget_continueItem1 = base.CreateWidget<CommonRewardItem>(VariableArray.Get<RectTransform>(11).gameObject,VariableArray.Get<RectTransform>(11).gameObject.activeSelf);
+			widget_continueItem2 = base.CreateWidget<CommonRewardItem>(VariableArray.Get<RectTransform>(12).gameObject,VariableArray.Get<RectTransform>(12).gameObject.activeSelf);
 			go_winStreak1 = VariableArray.Get<RectTransform>(13).gameObject;
 			go_target = VariableArray.Get<RectTransform>(14).gameObject;
 			btn_close = VariableArray.Get<Button>(15);
@@ -82,7 +82,7 @@ namespace HotfixLogic
 			text_buyCoin = VariableArray.Get<TextMeshProUGUI>(26);
 			btn_free = VariableArray.Get<Button>(27);
 			go_property = VariableArray.Get<RectTransform>(28).gameObject;
-			// widget_property = base.CreateWidget<CommonWidgetProperty>(VariableArray.Get<RectTransform>(29).gameObject,VariableArray.Get<RectTransform>(29).gameObject.activeSelf);
+			widget_property = base.CreateWidget<CommonWidgetProperty>(VariableArray.Get<RectTransform>(29).gameObject,VariableArray.Get<RectTransform>(29).gameObject.activeSelf);
 			btn_adv = VariableArray.Get<Button>(30);
 			text_advStep = VariableArray.Get<TextMeshProUGUI>(31);
 			go_gift = VariableArray.Get<RectTransform>(32).gameObject;

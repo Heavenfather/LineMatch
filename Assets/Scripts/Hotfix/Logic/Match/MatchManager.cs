@@ -65,15 +65,10 @@ namespace HotfixLogic.Match
         
         private MatchLevelType _currentMatchLevelType = MatchLevelType.A;
         
-        // 为了方便我测试重构
-#if UNITY_EDITOR && UNITY_WEBGL
-        public MatchLevelType CurrentMatchLevelType = MatchLevelType.B;
-#else
         /// <summary>
         /// 当前消除关卡类型
         /// </summary>
         public MatchLevelType CurrentMatchLevelType => _currentMatchLevelType;
-#endif
         
         private MatchGameType _currentMatchGameType = MatchGameType.NormalMatch;
 
@@ -81,7 +76,7 @@ namespace HotfixLogic.Match
         {
             get
             {
-                if (_currentMatchLevelType != MatchLevelType.Editor && CurrentMatchLevelType == MatchLevelType.C)
+                if (_currentMatchLevelType == MatchLevelType.Editor && CurrentMatchLevelType == MatchLevelType.C)
                     return MatchGameType.TowDots; //C关就是towdots模式
                 if (CurrentMatchLevelType == MatchLevelType.Editor)
                 {
@@ -174,7 +169,7 @@ namespace HotfixLogic.Match
                     }
                 },progressCallBack: (progress) =>
                 {
-                    AudioUtil.PreloadMatchLinkAudio().Forget();
+                    CommonLoading.ShowLoading(LoadingEnum.Match, progress * 0.6f);
                 });
             return tcs.Task;
         }
@@ -260,7 +255,17 @@ namespace HotfixLogic.Match
 
         public void GameBeginUseElements()
         {
-            if (_beginUseElements.Count <= 0 && _winStreakElements.Count <= 0) return;
+            //C 关先暂时去掉连胜宝箱，做完TOWDots道具后再打开
+            if (_currentMatchLevelType == MatchLevelType.C)
+            {
+                ClearBeginUseElements();
+            }
+            
+            if (_beginUseElements.Count <= 0 && _winStreakElements.Count <= 0)
+            {
+                G.EventModule.DispatchEvent(GameEventDefine.OnMatchUpdateSpecialElements,EventThreeParam<List<int>, List<int>, bool>.Create(null, null, false));
+                return;
+            }
 
             var useBooster = new List<int>();
             useBooster.AddRange(_beginUseElements);

@@ -30,7 +30,7 @@ namespace HotfixLogic
 		int _continueStep = 0;
 
 		List<ItemData> _continueItems = new List<ItemData>();
-		// List<CommonRewardItem> _continueItemWidgets = new List<CommonRewardItem>();
+		List<CommonRewardItem> _continueItemWidgets = new List<CommonRewardItem>();
 
 		MatchBoosterSelect _boosters;
 
@@ -58,8 +58,8 @@ namespace HotfixLogic
 			_reviveLostCount = MatchManager.Instance.LostCount + 1;
 			if (_reviveLostCount > 5) _reviveLostCount = 5;
 
-			// _continueItemWidgets.Add(widget_continueItem1);
-			// _continueItemWidgets.Add(widget_continueItem2);
+			_continueItemWidgets.Add(widget_continueItem1);
+			_continueItemWidgets.Add(widget_continueItem2);
 
 			btn_close.AddClick(OnClickCloseBtn);
 			btn_begin.AddClick(OnClickBeginBtn);
@@ -70,8 +70,8 @@ namespace HotfixLogic
 			if (CommonUtil.IsWechatMiniGame()) {
 				var designResolution = G.UIModule.GetDesignResolution();
 				if (Screen.width / Screen.height < designResolution.x / designResolution.y) {
-					// var rectTransform = widg/et_property.transform.GetComponent<RectTransform>();
-					// rectTransform.anchoredPosition = new Vector2(0, -80);
+					var rectTransform = widget_property.transform.GetComponent<RectTransform>();
+					rectTransform.anchoredPosition = new Vector2(0, -80);
 				}
 			}
 
@@ -97,7 +97,7 @@ namespace HotfixLogic
 
         private void OnMatchRestartComplete()
         {
-	        AddElements();
+	        AddElements(true);
         }
 
         private void InitWidget() {
@@ -138,6 +138,15 @@ namespace HotfixLogic
 				for (int i = 0; i < res.Length; i++) {
 					string[] item = res[i].Split('*');
 					_continueItems.Add(new ItemData(item[0], int.Parse(item[1])));
+				}
+			}
+
+			for (int i = 0; i < _continueItemWidgets.Count; i++) {
+				var widget = _continueItemWidgets[i];
+				widget.gameObject.SetActive(i < _continueItems.Count);
+
+				if (i < _continueItems.Count) {
+					widget.SetData(_continueItems[i].Id, _continueItems[i].Count);
 				}
 			}
 
@@ -298,11 +307,28 @@ namespace HotfixLogic
 			go_mask.SetActive(true);
 
 			var targetPos = img_live.transform.position;
+			var beginPos = widget_property.GetLivePos();
 
 			img_flyLive.gameObject.SetActive(true);
+			img_flyLive.transform.position = beginPos;
 			go_eff.transform.position = targetPos;
 
 
+			var centerY = (beginPos.y + targetPos.y) * 0.2f;
+
+			var pathPos = new Vector3(beginPos.x - 1f, centerY, beginPos.z);
+			Vector3[] path = new Vector3[] { pathPos,  targetPos};
+
+			var seq = DOTween.Sequence();
+			seq.AppendInterval(0.15f);
+			seq.Append(img_flyLive.transform.DOPath(path, 0.4f, PathType.CatmullRom).SetEase(Ease.InSine));
+			seq.AppendCallback(() => {
+				go_eff.SetActive(true);
+			});
+			seq.AppendInterval(0.2f);
+			seq.AppendCallback(() => {
+				PlayAgain();
+			});
 		}
 
 		private void ReqBeginMatch() {
@@ -341,6 +367,19 @@ namespace HotfixLogic
 				return;
 			}
 			
+			var needCoin = int.Parse(text_buyCoin.text);
+			if (G.GameItemModule.GetItemCount("coin") < needCoin) {
+				if (G.TimerGiftModule.CheckGiftInTime(TimerGiftType.LimitTimeGift)) {
+					CommonUtil.ShowGiftUI<GiftLimitTime>(GiftPopType.Bankruptcy);
+				} else if (!G.TimerGiftModule.HasTadayLimitTimeGift()) {
+					G.TimerGiftModule.StartLimitTimeGift();
+					CommonUtil.ShowGiftUI<GiftLimitTime>(GiftPopType.Bankruptcy);
+				} else {
+					CommonUtil.ShowGradeGift("coin");
+				}
+				return;
+			}
+
 			if (Time.time - _continueTouchTime < 3) return;
 			_continueTouchTime = Time.time;
 
@@ -362,7 +401,7 @@ namespace HotfixLogic
 			List<int> rewardIDList = new List<int>();
 
 			var db = ConfigMemoryPool.Get<ItemElementDictDB>();
-			if (isRestart) {
+			if (!isRestart) {
 				foreach (var item in _continueItems) {
 					for (int i = 0; i < item.Count; i++) {
 						rewardIDList.Add(db.GetElementId(item.Name));

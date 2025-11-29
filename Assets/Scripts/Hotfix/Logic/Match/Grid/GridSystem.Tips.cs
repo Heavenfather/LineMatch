@@ -43,7 +43,6 @@ namespace HotfixLogic.Match
             _normalTipsSwap = 0;
             _elementTipsList ??= new List<List<Vector2Int>>();
             _elementTipsList.Clear();
-            KillOnStepTween();
             ClearTipsTimer();
             MatchTipsUtil.RefreshElementGroup();
             if (MatchTipsUtil.TryGetSpecialTipsList(out _specialElementTipsList))
@@ -58,9 +57,7 @@ namespace HotfixLogic.Match
                     // Logger.Debug($"RefreshMatchTips total times :{stopwatch.Elapsed.TotalMilliseconds} ms");
                 }
 
-                if (_levelData.id < _globalTipsLevel)
-                    PlayFingerPathTips();
-                else
+                // else
                     _tipsTimerId = G.TimerModule.AddTimer(OnElementTipsUpdate, GetTipsTimerDuration(), true);
             }
             else
@@ -71,9 +68,9 @@ namespace HotfixLogic.Match
                 {
                     _tipsType = (MatchTipsType)priority;
                     _haveNormalTips = true;
-                    if (_levelData.id < _globalTipsLevel)
-                        PlayFingerPathTips();
-                    else
+                    // if (_levelData.id <= _globalTipsLevel)
+                    //     PlayFingerPathTips();
+                    // else
                         _tipsTimerId = G.TimerModule.AddTimer(OnElementTipsUpdate, GetTipsTimerDuration(), true);
                 }
                 else
@@ -89,9 +86,9 @@ namespace HotfixLogic.Match
                             _haveObstacleTips = true;
                             _obstaclesTips = result.Value.obstacles;
                             _formedRectangleTips = result.Value.formedRectangleOriginalPos;
-                            // _tipsTimerId = G.TimerModule.AddTimer(OnElementTipsUpdate, GetTipsTimerDuration(), true);
+                            _tipsTimerId = G.TimerModule.AddTimer(OnElementTipsUpdate, GetTipsTimerDuration(), true);
 
-                            PlayOneStepMatchTips(_obstaclesTips, _formedRectangleTips);
+                            // PlayOneStepMatchTips(_obstaclesTips, _formedRectangleTips);
                         }
                     }
                     // Logger.Debug($"FindRectanglesAfterObstacleRemoval total times :{stopwatch.Elapsed.TotalMilliseconds} ms");
@@ -101,6 +98,8 @@ namespace HotfixLogic.Match
 
         private void OnElementTipsUpdate()
         {
+            if(_isTouching)
+                return;
             if (_isGuiding && _isExecuteGuideLevel == false)
                 return;
             if (IsUsingItemState)
@@ -111,7 +110,10 @@ namespace HotfixLogic.Match
             {
                 if (_swap2Normal)
                 {
-                    PlayMatchNormalTips();
+                    if (_levelData.id <= _globalTipsLevel)
+                        PlayFingerPathTips();
+                    else
+                        PlayMatchNormalTips();
 
                     _normalTipsSwap++;
                     if(_normalTipsSwap >= _elementTipsList.Count)
@@ -130,16 +132,23 @@ namespace HotfixLogic.Match
             }
             else if (_haveNormalTips)
             {
-                PlayMatchNormalTips();
+                if (_levelData.id <= _globalTipsLevel)
+                    PlayFingerPathTips();
+                else
+                    PlayMatchNormalTips();
 
                 _normalTipsSwap++;
                 if(_normalTipsSwap >= _elementTipsList.Count)
                     _normalTipsSwap = 0;
             }
-            // else if (_haveObstacleTips)
-            // {
-            //     PlayOneStepMatchTips(_obstaclesTips,_formedRectangleTips);
-            // }
+            else if (_haveObstacleTips)
+            {
+                if (_oneStepSequence == null || !_oneStepSequence.IsPlaying())
+                {
+                    PlayOneStepMatchTips(_obstaclesTips, _formedRectangleTips);
+                }
+                // PlayOneStepMatchTips(_obstaclesTips,_formedRectangleTips);
+            }
         }
 
         private void PlayMatchDoubleTips()
@@ -241,6 +250,8 @@ namespace HotfixLogic.Match
         {
             if (_elementTipsList == null || _elementTipsList.Count <= 0)
                 return;
+            if(_guideFingerTween != null && _guideFingerTween.IsPlaying())
+                return;
 
             var l = _elementTipsList[_normalTipsSwap % _elementTipsList.Count];
             Vector2Int[] coords = new Vector2Int[l.Count + 1];
@@ -259,6 +270,8 @@ namespace HotfixLogic.Match
                 return;
             if(targetList == null || targetList.Count <= 0)
                 return;
+            _oneStepSequence?.Kill();
+            _oneStepSequence = null;
             
             _guideFinger.transform.position = GetGridPositionByCoord(lineList[0].x, lineList[0].y);
             SetFingerVisible(true);
@@ -318,9 +331,23 @@ namespace HotfixLogic.Match
 
         private void KillOnStepTween() {
             if (_oneStepSequence != null) {
-                SetFingerVisible(false);
                 _oneStepSequence.Kill();
                 _oneStepSequence = null;
+                SetFingerVisible(false);
+            }
+        }
+
+        private void PauseFingerTipsTween()
+        {
+            if (_guideFingerTween != null && _guideFingerTween.IsPlaying())
+            {
+                _guideFingerTween.Pause();
+                SetFingerVisible(false);
+                LineController.Instance.ClearUnderLine();
+                for (int i = 0; i < _guidePathCoords.Count; i++)
+                {
+                    SetCoordElementScale(_guidePathCoords[i], 0.1f, 1.0f);
+                }
             }
         }
 
@@ -366,6 +393,7 @@ namespace HotfixLogic.Match
                 }
             }
 
+            KillOnStepTween(); 
             if (_colorBallTipsTrail != null)
             {
                 _colorBallTipsTrail.StopTrail();
@@ -383,6 +411,9 @@ namespace HotfixLogic.Match
                 _bombTipsTrail.StopTrail();
                 _bombTipsTrail = null;
             }
+            
+            _guidePathCoords.Clear();
+            _guideFingerTween?.Kill();
         }
 
         private void StopOrResumeTipsTimer(bool isStop,bool isRemove = false)

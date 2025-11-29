@@ -451,7 +451,7 @@ namespace Hotfix.Logic.Match
             return neighbor;
         }
 
-        public static Dictionary<int, List<Vector2Int>> SortedDeleteInfoToMap(List<DeleteGridInfo> oriDelInfos)
+        public static Dictionary<int, List<Vector2Int>> SortedDeleteInfoToMap(List<DeleteGridInfo> oriDelInfos,HashSet<int> filterList = null)
         {
             Dictionary<int, List<Vector2Int>> delInfosMap = new Dictionary<int, List<Vector2Int>>(20);
 
@@ -471,6 +471,21 @@ namespace Hotfix.Logic.Match
                 var delInfo = oriDelInfos[i];
                 if (delInfo.ElementConfigIds != null)
                 {
+                    bool canAdd = true;
+                    if (filterList != null)
+                    {
+                        foreach (var uid in delInfo.ElementUIds)
+                        {
+                            if (!filterList.Contains(uid))
+                            {
+                                canAdd = false;
+                                break;
+                            }
+                        }
+                    }
+                    if(!canAdd)
+                        continue;
+                    
                     foreach (var configId in delInfo.ElementConfigIds)
                     {
                         if(IsContainCoord(delInfo.Coord))

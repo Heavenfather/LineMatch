@@ -109,6 +109,7 @@ namespace HotfixLogic.Match
             if (_currentSelectedGrid.Data.IsGridLock())
                 return;
 
+            _isTouching = true;
             Vector2 overLineLastPos = MainCamera.ScreenToWorldPoint(screenPos);
 
             if (!_rectangleFlag)

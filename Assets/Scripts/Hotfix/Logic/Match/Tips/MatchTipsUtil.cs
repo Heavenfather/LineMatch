@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using GameConfig;
+using Hotfix.Define;
 using UnityEngine;
 using Logger = GameCore.Log.Logger;
 
@@ -102,6 +103,8 @@ namespace HotfixLogic.Match
         public static bool TryGetSpecialTipsList(out List<Vector2Int> tipsList)
         {
             tipsList = null;
+            if (IsOnly2x2Square())
+                return false;
 
             if (_specialElements == null || _specialElements.Count == 0)
                 return false;
@@ -328,7 +331,8 @@ namespace HotfixLogic.Match
             Vector2Int? startPos = null)
         {
             // 按优先级顺序查找矩形闭环
-            for (int priority = 0; priority < priorityCount; priority++)
+            int startIndex = IsOnly2x2Square() ? _priorityMinCounts.Length - 1 : 0;
+            for (int priority = startIndex; priority < priorityCount; priority++)
             {
                 bool bothDirections = _priorityBothDirections[priority];
                 int minCount = _priorityMinCounts[priority];
@@ -629,6 +633,12 @@ namespace HotfixLogic.Match
             return (null, -1);
         }
 
+        private static bool IsOnly2x2Square()
+        {
+            MatchLevelType levelType = MatchManager.Instance.CurrentMatchLevelType;
+            return levelType == MatchLevelType.C;
+        }
+        
         /// <summary>
         /// 从任意位置开始找闭环
         /// </summary>

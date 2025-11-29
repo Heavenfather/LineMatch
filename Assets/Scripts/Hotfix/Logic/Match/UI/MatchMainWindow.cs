@@ -102,6 +102,7 @@ namespace HotfixLogic
                         if (!curFinish && isFinish)
                         {
                             AudioUtil.PlaySound("audio/match/collect_finish");
+                            G.EventModule.DispatchEvent(GameEventDefine.OnMatchCollectFinishTarget, EventOneParam<int>.Create(_targetId));
                         }
                     }
 
@@ -213,6 +214,7 @@ namespace HotfixLogic
                 go_star3.transform.Find("finish").gameObject
             };
 
+            btn_settings.AddClick(() => { G.UIModule.ShowUIAsync<MainSetting>("", true); });
             btn_gmColor.AddClick(() => { G.EventModule.DispatchEvent(GameEventDefine.OnOpenMatchGmChangePanel); });
             btn_gmColor.SetVisible(GameSettings.Instance.IsShowDebugConsole());
             btn_guideLevelFinish.AddClick(OnGuideLevelFinishClick);

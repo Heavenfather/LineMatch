@@ -46,6 +46,7 @@ namespace HotfixLogic
             _itemName = G.GameItemModule.GetItemName(itemId);
 
             int itemNum = G.GameItemModule.GetItemCount(_itemId);
+            widget_item.SetData(_itemName, itemNum, OnRewardItemClick, CommonItemSizeType.Small);
 
             var maxLv = MatchManager.Instance.MaxLevel;
             _unlockLv = ConfigMemoryPool.Get<ConstConfigDB>().GetMatchBoosterUnlockLv(_itemName);
@@ -110,6 +111,7 @@ namespace HotfixLogic
             if (itemId < 0)
             {
                 this.gameObject.SetGray(false);
+                widget_item.RegisterClick(OnRewardItemClick);
                 btn_add.interactable = true;
                 _isInUsing = false;
             }
@@ -127,6 +129,7 @@ namespace HotfixLogic
                     _isInUsing = true;
                 }
 
+                widget_item.RegisterClick(OnRewardItemClick);
             }
         }
 
@@ -190,9 +193,8 @@ namespace HotfixLogic
             return itemNum > 0;
         }
 
-        public GameObject GetIconWidgetObj()
-        {
-            return null;
+        public GameObject GetIconWidgetObj() {
+            return widget_item.gameObject;
         }
 
         private void OnLockClick() {

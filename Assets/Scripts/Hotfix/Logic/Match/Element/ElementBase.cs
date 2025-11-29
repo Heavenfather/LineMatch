@@ -124,7 +124,7 @@ namespace HotfixLogic.Match
             if (icon != null)
             {
                 icon.SetVisible(false);
-                ResetSortingLayer("Item", Data.SortOrder);
+                // ResetSortingLayer("Item", Data.SortOrder);
                 ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
                 ElementMap config = db[Data.ConfigId];
                 if (!string.IsNullOrEmpty(config.idleSpine))

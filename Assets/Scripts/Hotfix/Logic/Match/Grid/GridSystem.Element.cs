@@ -797,11 +797,30 @@ namespace HotfixLogic.Match
 
                     if (!haveBlock)
                     {
+                        isGuideDrop = true;
                         _destroyGrids.Clear();
-                        context.CalAddedDelTargets?.Clear();
                         _guideLevelItemBg.SetVisible(false);
-                        OnMatchGuideLevelStepComplete();
-                        return;
+                        Vector2Int blockKey = default;
+                        foreach (var item in context.DestroyedElements)
+                        {
+                            if (_elementMap[item.Value].elementType != ElementType.Normal)
+                            {
+                                blockKey = item.Key;
+                                break;
+                            }
+                        }
+
+                        context.DestroyedElements[blockKey] = _levelData.initColor[0];
+                        G.EventModule.DispatchEvent(GameEventDefine.OnMatchGuideLevelStepFinish,EventOneParam<int>.Create(6));
+                        UniTask.Create(async () =>
+                        {
+                            context.CalAddedDelTargets?.Clear();
+                            await UniTask.Delay(TimeSpan.FromSeconds(0.8f));
+                            await Clear();
+                            await UniTask.Delay(TimeSpan.FromSeconds(1.2f));
+                            OnMatchGuideLevelStepComplete();
+                        }).Forget();
+                        // return;
                     }
                     else
                     {
@@ -850,7 +869,7 @@ namespace HotfixLogic.Match
             }
             else
             {
-                if (_levelData.id == 4)
+                if (_levelData.id == 4 || _levelData.id == 6)
                 {
                     var newElements = await GenGuideLevelDropElement(context.DestroyedElements);
                     ProcessBoardDrop(context);
@@ -938,6 +957,9 @@ namespace HotfixLogic.Match
                         return true;
                 }
 
+                if (MatchManager.Instance.CurrentMatchLevelType == MatchLevelType.C ||
+                    MatchManager.Instance.CurrentMatchGameType == MatchGameType.TowDots)
+                    return false;
                 if (context.GenSpecialInfos is { Count: > 0 })
                 {
                     if (context.GenSpecialInfos.FindIndex(info => info.Coord == coord) >= 0)
@@ -1207,6 +1229,7 @@ namespace HotfixLogic.Match
             }
 
             List<ElementBase> needAfterChangeStateElements = new List<ElementBase>();
+            HashSet<int> collectedUId = new HashSet<int>();
             foreach (var kp in allElements)
             {
                 if (context.BombPanelElementCoord != null && context.BombPanelElementCoord.Contains(kp.Key))
@@ -1217,6 +1240,7 @@ namespace HotfixLogic.Match
                     if (element.Data.EliminateCount == 0)
                     {
                         context.AddWillDelCoord(kp.Key, element.Data.EliminateStyle, element.Data.UId);
+                        collectedUId.Add(element.Data.UId);
                     }
 
                     //掉落收集
@@ -1225,6 +1249,7 @@ namespace HotfixLogic.Match
                     {
                         context.AddWillDelCoord(kp.Key, element.Data.EliminateStyle, element.Data.UId);
                         context.CollectDropId = element.Data.ConfigId;
+                        collectedUId.Add(element.Data.UId);
                     }
 
                     if (element is TargetBlockElementItem targetElement)
@@ -1232,12 +1257,16 @@ namespace HotfixLogic.Match
                         int targetId = targetElement.GetTargetId();
                         if (context.CalAddedDelTargets.ContainsKey(targetId) &&
                             context.CalAddedDelTargets[targetId] > 0)
+                        {
                             context.AddWillDelCoord(kp.Key, EliminateStyle.Target, targetElement.Data.UId);
+                            collectedUId.Add(targetElement.Data.UId);
+                        }
                     }
 
                     if (_dropRoundCount == 1 && context.GenSquareElementId > 0 && element.Data.EliminateStyle == EliminateStyle.Square)
                     {
                         context.AddWillDelCoord(kp.Key, element.Data.EliminateStyle, element.Data.UId);
+                        collectedUId.Add(element.Data.UId);
                     }
                     if (!haveBombPanel)
                     {
@@ -1246,11 +1275,13 @@ namespace HotfixLogic.Match
                         {
                             context.AddWillDelCoord(element.Data.GridPos, element.Data.EliminateStyle,
                                 element.Data.UId);
+                            collectedUId.Add(element.Data.UId);
                         }
 
                         if (_dropRoundCount == 1 && (element is ColoredLightBlockElementItem || element is AdjustCollectElementItem))
                         {
                             needAfterChangeStateElements.Add(element);
+                            collectedUId.Add(element.Data.UId);
                         }
                     }
                 }
@@ -1260,7 +1291,7 @@ namespace HotfixLogic.Match
             if (context.WillDelCoords.Count > 0)
             {
                 hasDrop = true;
-                var sortedMap = MatchTweenUtil.SortedDeleteInfoToMap(context.WillDelCoords);
+                var sortedMap = MatchTweenUtil.SortedDeleteInfoToMap(context.WillDelCoords, collectedUId);
                 foreach (var (_, coords) in sortedMap)
                 {
                     for (int i = 0; i < coords.Count; i++)

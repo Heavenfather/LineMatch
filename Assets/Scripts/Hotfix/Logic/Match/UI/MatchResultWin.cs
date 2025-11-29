@@ -272,6 +272,7 @@ namespace HotfixLogic
 				Debug.Log("ReportLevelGameBegin result:" + result + " code:" + code);
 				if (code == 0) {
                     // 在游戏中继续下一关，在loading中关闭界面，在重新进入刷新数据
+                    CommonLoading.ShowLoading(LoadingEnum.Match, 0f);
                     EventDispatcher.DispatchEvent(GameEventDefine.OnMatchCloseContinue); 
 				} else {
 					Debug.LogError("ReportLevelGameBegin failed, code:" + code);
@@ -293,6 +294,10 @@ namespace HotfixLogic
 		private void ShineAnim() {
             text_close.alpha = 0f;
             _shineTween = CommonUtil.TextShine(text_close);
+
+            if (CheckMustNextLevel()) {
+                text_close.text = LocalizationPool.Get("Match/Result/TouchContinue");
+            }
 		}
 
         private void OnClickAdv() {
@@ -429,6 +434,11 @@ namespace HotfixLogic
                     }
                 });
             }
+
+            if (_starCount == 0) {
+                PlayAnimFinish();
+                InitWinStreak();
+            }
         }
 
         private void PlayAnimFinish() {
@@ -485,11 +495,7 @@ namespace HotfixLogic
 			seq.AppendCallback(() => {
 				spine_touch.AnimationState.SetAnimation(0, "dianji", false);
 			});
-			seq.AppendInterval(0.5f);
-			seq.AppendCallback(() => {
-				spine_touch.AnimationState.SetAnimation(0, "dianji", false);
-			});
-			seq.AppendInterval(0.5f);
+			seq.AppendInterval(1f);
 			seq.Append(spine_touch.DOFade(0, 0.5f));
 			seq.AppendInterval(1f);
 			seq.AppendCallback(() => {

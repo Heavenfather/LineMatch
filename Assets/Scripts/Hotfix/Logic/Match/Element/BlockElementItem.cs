@@ -3,6 +3,7 @@ using DG.Tweening;
 using GameConfig;
 using Hotfix.Define;
 using Hotfix.EventParameter;
+using HotfixCore.Extensions;
 using HotfixCore.MemoryPool;
 using HotfixCore.Module;
 using UnityEngine;
@@ -15,6 +16,25 @@ namespace HotfixLogic.Match
     /// </summary>
     public class BlockElementItem : ElementBase
     {
+        private SpriteRenderer _renderer;
+        private Sprite _boxNormalSprite;
+        private Sprite _boxFinishSprite;
+
+        protected override void OnInitialized() {
+            base.OnInitialized();
+
+
+            if (Data.ConfigId == 130) {
+                if (_renderer == null) {
+                    _renderer = GameObject.transform.Find("Icon")?.GetComponent<SpriteRenderer>();
+                    _boxNormalSprite = _renderer.sprite;
+                    InitBoxFinishSprite();
+                } 
+
+                LoadBoxSprite(false);
+            }
+        }
+
         public override void DoSelect()
         {
         }
@@ -157,6 +177,29 @@ namespace HotfixLogic.Match
             ref readonly ElementMap config = ref db[elementId];
             int baseScore = config.score;
             MatchManager.Instance.AddScore(baseScore);
+        }
+
+        public void LoadBoxSprite(bool isFinish) {
+            Sprite sprite = isFinish? _boxFinishSprite : _boxNormalSprite;
+            if (sprite == null || _renderer.sprite == sprite) {
+                return;
+            }
+
+            if (_renderer.gameObject.activeSelf) {
+                _renderer.sprite = sprite;
+            } else {
+                _renderer.sprite = sprite;
+            }
+        }
+
+        private void InitBoxFinishSprite() {
+            var path = "match/sprites/item_block_130_1";
+            G.ResourceModule.LoadAssetAsync<Sprite>(path, (sprite) => {
+                if (sprite == null) {
+                    return;
+                }
+                _boxFinishSprite = sprite;
+            }).Forget();
         }
     }
 }
