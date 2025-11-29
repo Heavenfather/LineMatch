@@ -24,6 +24,6 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="world"></param>
         /// <param name="entity"></param>
         /// <returns></returns>
-        bool IsElementCanSelected(EcsWorld world, int entity);
+        bool IsElementCanSelectDelete(EcsWorld world, int entity);
     }
 }

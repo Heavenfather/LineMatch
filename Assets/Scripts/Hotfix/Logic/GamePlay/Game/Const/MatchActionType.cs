@@ -9,6 +9,5 @@
         Spawn2Other, // 生成其它棋子
         Transform, // 变化下一个状态
         AddScore, // 加分
-        CollectTarget // 收集目标
     }
 }

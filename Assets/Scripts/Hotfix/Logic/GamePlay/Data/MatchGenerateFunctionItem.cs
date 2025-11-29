@@ -14,6 +14,11 @@ namespace Hotfix.Logic.GamePlay
         /// 生成位置
         /// </summary>
         public Vector2Int GenCoord;
+
+        /// <summary>
+        /// 转换成其它棋子时传递的棋子宽高
+        /// </summary>
+        public Vector2Int ElementSize;
     }
     
     /// <summary>

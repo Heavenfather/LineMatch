@@ -21,7 +21,7 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        public bool IsElementCanSelected(EcsWorld world, int entity)
+        public bool IsElementCanSelectDelete(EcsWorld world, int entity)
         {
             // 掉落收集类的元素，本身不会受任何爆炸和消除影响，只监听棋盘上空位变化
             return false;

@@ -91,7 +91,7 @@ namespace Hotfix.Logic.GamePlay
                     if (IsCellEmpty(x, y))
                     {
                         int configId = levelData.initColor[Random.Range(0, levelData.initColor.Length)];
-                        int entity = _elementFactory.CreateElementEntity(_context, _matchService, configId, x, y);
+                        int entity = _elementFactory.CreateElementEntity(_context, _matchService, configId, x, y, 1, 1);
                         FillElementEntityToGrids(entity, x, y, 1, 1);
                     }
                 }

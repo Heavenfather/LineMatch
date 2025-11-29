@@ -27,7 +27,7 @@ namespace Hotfix.Logic.GamePlay
             eleComponent.IsMatchable = true;
         }
 
-        public bool IsElementCanSelected(EcsWorld world, int entity)
+        public bool IsElementCanSelectDelete(EcsWorld world, int entity)
         {
             return true;
         }

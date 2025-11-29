@@ -4,8 +4,6 @@ namespace Hotfix.Logic.GamePlay
 {
     public class DefaultElementTransitionRule : IElementTransitionRuleService
     {
-        private ElementMapDB _elementMap;
-        
         /// <summary>
         /// 尝试转换下一个元素
         /// </summary>
@@ -15,10 +13,10 @@ namespace Hotfix.Logic.GamePlay
         /// <returns></returns>
         public bool TryTransitionToNextElement(int currentElement, IMatchService matchService, out int nextElement)
         {
-            _elementMap = ConfigMemoryPool.Get<ElementMapDB>();
+             var mapDB = ConfigMemoryPool.Get<ElementMapDB>();
             nextElement = 0;
             
-            ref readonly ElementMap currentConfig = ref _elementMap[currentElement];
+            ref readonly ElementMap currentConfig = ref mapDB[currentElement];
             if (currentConfig.nextBlock <= 0)
                 return false;
             

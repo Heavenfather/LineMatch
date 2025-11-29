@@ -35,24 +35,6 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         public static readonly Vector2 GridSize = new Vector2(0.8f, 0.8f);
 
-        /// <summary>
-        /// 判断元素是否可匹配
-        /// </summary>
-        /// <param name="elementType"></param>
-        /// <returns></returns>
-        public static bool IsMatchable(ElementType elementType)
-        {
-            return elementType == ElementType.Rocket ||
-                   elementType == ElementType.RocketHorizontal ||
-                   elementType == ElementType.Bomb ||
-                   elementType == ElementType.ColorBall ||
-                   elementType == ElementType.StarBomb ||
-                   elementType == ElementType.SearchDot ||
-                   elementType == ElementType.HorizontalDot ||
-                   elementType == ElementType.TowDotsBombDot ||
-                   elementType == ElementType.TowDotsColoredDot;
-        }
-
         public static void DynamicModifyColorMap(BoardColorStruck data)
         {
             MatchBgColor = $"#{ColorUtility.ToHtmlStringRGB(data.BgColor).ToLower()}";
@@ -148,14 +130,15 @@ namespace Hotfix.Logic.GamePlay
         }
 
         /// <summary>
-        /// 该元素是否永远都不会被销毁
+        /// 是否循环类型元素
         /// </summary>
-        /// <param name="component"></param>
+        /// <param name="element"></param>
         /// <returns></returns>
-        // public static bool IsLockNeverDieElement(this ElementComponent component)
-        // {
-        //     
-        // }
+        public static bool IsCycleElement(this ElementComponent element)
+        {
+            ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
+            return db.IsCircleElement(element.ConfigId);
+        }
 
         private static void BuildElementColorMap()
         {

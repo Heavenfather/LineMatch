@@ -14,5 +14,15 @@
         /// 销毁Y的坐标
         /// </summary>
         public int Y;
+
+        /// <summary>
+        /// 被销毁的配置Id
+        /// </summary>
+        public int ConfigId;
+
+        /// <summary>
+        /// 被销毁的元素实体Id
+        /// </summary>
+        public int EntityId;
     }
 }

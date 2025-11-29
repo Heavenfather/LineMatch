@@ -80,7 +80,6 @@ namespace Hotfix.Logic.GamePlay
             eleComp.OriginGridPosition = new Vector2Int(x, y);
             eleComp.IsMovable = config.isMovable;
             eleComp.IsMatchable = false;
-            eleComp.IsDamageDirty = false;
 
             // [PositionComponent]
             var posPool = world.GetPool<ElementPositionComponent>();
@@ -136,7 +135,22 @@ namespace Hotfix.Logic.GamePlay
         public bool IsElementCanSelected(ElementType elementType, EcsWorld world, int elementEntity)
         {
             return _builders.TryGetValue(ParseLinkElementType(elementType), out var builder) &&
-                   builder.IsElementCanSelected(world, elementEntity);
+                   builder.IsElementCanSelectDelete(world, elementEntity);
+        }
+
+        public void AddDestroyElementTag2Entity(EcsWorld world, int entity)
+        {
+            var destroyTagPool = world.GetPool<DestroyElementTagComponent>();
+            if(destroyTagPool.Has(entity))
+                return;
+            
+            var elementPool = world.GetPool<ElementComponent>();
+            ref var elementCom = ref elementPool.Get(entity);
+            ref var destroyTagCom = ref destroyTagPool.Add(entity);
+            destroyTagCom.X = elementCom.OriginGridPosition.x;
+            destroyTagCom.Y = elementCom.OriginGridPosition.y;
+            destroyTagCom.ConfigId = elementCom.ConfigId;
+            destroyTagCom.EntityId = entity;
         }
 
         /// <summary>

@@ -5,6 +5,9 @@
     /// </summary>
     public struct EliminatedTag
     {
-        
+        /// <summary>
+        /// 被消除的次数
+        /// </summary>
+        public int EliminateCount;
     }
 }

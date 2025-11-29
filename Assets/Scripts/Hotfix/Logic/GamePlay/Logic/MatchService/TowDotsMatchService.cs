@@ -282,7 +282,8 @@ namespace Hotfix.Logic.GamePlay
                 genItem = new GenItemData()
                 {
                     ConfigId = ElementType2ConfigId(ElementType.Bomb),
-                    GenCoord = elementCom.Get(normalElementEntity).OriginGridPosition
+                    GenCoord = elementCom.Get(normalElementEntity).OriginGridPosition,
+                    ElementSize = new Vector2Int(elementCom.Get(normalElementEntity).Width, elementCom.Get(normalElementEntity).Height)
                 };
                 return true;
             }

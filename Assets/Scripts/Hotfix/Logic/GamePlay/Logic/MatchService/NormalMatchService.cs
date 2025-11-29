@@ -245,7 +245,8 @@ namespace Hotfix.Logic.GamePlay
 
             //任务统计
             TaskManager.Instance.AddTaskCalculate((TaskTag)rule.taskTag);
-            return new GenItemData() { ConfigId = ElementType2ConfigId(finalType), GenCoord = genCoord };
+            return new GenItemData()
+                { ConfigId = ElementType2ConfigId(finalType), GenCoord = genCoord, ElementSize = Vector2Int.one };
         }
 
         private AtomicAction AddScoreAction(OneTakeScoreType scoreType, int configId, int count)

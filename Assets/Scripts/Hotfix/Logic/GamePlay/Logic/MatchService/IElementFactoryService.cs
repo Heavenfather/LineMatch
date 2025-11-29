@@ -17,12 +17,19 @@ namespace Hotfix.Logic.GamePlay
         /// 创建元素实体
         /// </summary>
         /// <returns></returns>
-        int CreateElementEntity(GameStateContext context,IMatchService matchService, int configId, int x, int y, int width = 1, int height = 1);
+        int CreateElementEntity(GameStateContext context,IMatchService matchService, int configId, int x, int y, int width, int height);
 
         /// <summary>
         /// 当元素被爆到时，它能否被选中做销毁操作
         /// </summary>
         /// <returns></returns>
         bool IsElementCanSelected(ElementType elementType,EcsWorld world, int elementEntity);
+
+        /// <summary>
+        /// 统一由该函数为元素添加上销毁标记
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="entity"></param>
+        void AddDestroyElementTag2Entity(EcsWorld world, int entity);
     }
 }

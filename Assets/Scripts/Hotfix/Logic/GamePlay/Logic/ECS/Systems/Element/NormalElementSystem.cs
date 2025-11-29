@@ -9,20 +9,20 @@ namespace Hotfix.Logic.GamePlay
     {
         private EcsWorld _world;
         private EcsFilter _filter;
+        private IElementFactoryService _elementService;
         private EcsPool<NormalElementComponent> _normalElementPool;
         private EcsPool<ElementRenderComponent> _elementRenderPool;
         private EcsPool<ElementComponent> _elementPool;
-        private EcsPool<DestroyElementTagComponent> _destroyTagPool;
 
         public void Init(IEcsSystems systems)
         {
             _world = systems.GetWorld();
+            _elementService = MatchBoot.Container.Resolve<IElementFactoryService>();
             _filter = _world.Filter<NormalElementComponent>().Include<ElementComponent>()
                 .Include<ElementRenderComponent>().End();
             _normalElementPool = _world.GetPool<NormalElementComponent>();
             _elementRenderPool = _world.GetPool<ElementRenderComponent>();
             _elementPool = _world.GetPool<ElementComponent>();
-            _destroyTagPool = _world.GetPool<DestroyElementTagComponent>();
         }
 
         public void Run(IEcsSystems systems)
@@ -35,7 +35,7 @@ namespace Hotfix.Logic.GamePlay
                 if (_elementPool.Get(entity).LogicState == ElementLogicalState.Acting && !normalElementComponent.IsOtherElementHandleThis)
                 {
                     elementComponent.LogicState = ElementLogicalState.Dying;
-                    _destroyTagPool.Add(entity);
+                    _elementService.AddDestroyElementTag2Entity(_world, entity);
                     continue;
                 }
                 

@@ -10,7 +10,7 @@ namespace Hotfix.Logic.GamePlay
         {
         }
 
-        public bool IsElementCanSelected(EcsWorld world, int entity)
+        public bool IsElementCanSelectDelete(EcsWorld world, int entity)
         {
             return true;
         }

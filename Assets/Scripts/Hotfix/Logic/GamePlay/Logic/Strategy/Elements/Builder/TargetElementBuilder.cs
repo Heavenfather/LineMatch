@@ -31,7 +31,7 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        public bool IsElementCanSelected(EcsWorld world, int entity)
+        public bool IsElementCanSelectDelete(EcsWorld world, int entity)
         {
             //需要收集目标的元素 它被爆到时，它不做任何反应，它只做收集反应
             return false;

@@ -79,6 +79,7 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new RocketSystem())
                 .Add(new BombSystem())
                 .Add(new TargetElementSystem())
+                .Add(new BackgroundElementSystem())
                 
                 // Normal需要排在最后，因为其它棋子可能需要对它进行处理
                 .Add(new NormalElementSystem())

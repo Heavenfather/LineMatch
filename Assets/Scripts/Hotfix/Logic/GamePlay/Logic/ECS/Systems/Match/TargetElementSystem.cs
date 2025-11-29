@@ -13,8 +13,8 @@ namespace Hotfix.Logic.GamePlay
         private EcsWorld _world;
         private EcsFilter _eliminatedFilter; // 所有刚死的普通棋子
         private EcsFilter _targetFilter;
+        private IElementFactoryService _elementService;
 
-        private EcsPool<DestroyElementTagComponent> _destroyTagPool;
         private EcsPool<ElementComponent> _elePool;
         private EcsPool<GridCellComponent> _gridPool;
         private EcsPool<NormalElementComponent> _normalElement;
@@ -22,13 +22,13 @@ namespace Hotfix.Logic.GamePlay
 
         public void Init(IEcsSystems systems)
         {
+            _elementService = MatchBoot.Container.Resolve<IElementFactoryService>();
             _world = systems.GetWorld();
             var context = systems.GetShared<GameStateContext>();
             _board = context.Board;
 
             _eliminatedFilter = _world.Filter<EliminatedTag>().Include<NormalElementComponent>().Include<ElementComponent>().End();
             _targetFilter = _world.Filter<TargetElementComponent>().Include<ElementComponent>().End();
-            _destroyTagPool = _world.GetPool<DestroyElementTagComponent>();
             _normalElement = _world.GetPool<NormalElementComponent>();
 
             _elePool = _world.GetPool<ElementComponent>();
@@ -108,7 +108,7 @@ namespace Hotfix.Logic.GamePlay
                             ref var eleCom = ref _elePool.Get(eliminateEntity);
                             eleCom.LogicState = ElementLogicalState.Dying;
                             // 移动结束，打上销毁标签，让它死亡
-                            _destroyTagPool.Add(eliminateEntity);
+                            _elementService.AddDestroyElementTag2Entity(_world, eliminateEntity);
                         }));
                     index++;
                 }
@@ -119,7 +119,7 @@ namespace Hotfix.Logic.GamePlay
                 ref var targetCom = ref _world.GetPool<TargetElementComponent>().Get(targetEntity);
                 // 本身该不该消失
                 if (targetCom.RemainTargetNum <= 0)
-                    _destroyTagPool.Add(targetEntity);
+                    _elementService.AddDestroyElementTag2Entity(_world, targetEntity);
             });
         }
     }
