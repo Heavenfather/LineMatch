@@ -12,6 +12,7 @@ namespace Hotfix.Logic.GamePlay
         {
             IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
             // 1.遍历所有连线的棋子 包括同色的棋子
+            ctx.BanDropElementId = ctx.Request.ConfigId;
             foreach (var entity in ctx.Request.InvolvedEntities)
             {
                 // 生成扣次数指令

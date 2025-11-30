@@ -26,7 +26,7 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="ruleType"></param>
         /// <returns></returns>
         IMatchRule GetMatchRule(MatchRequestType ruleType);
-
+        
         /// <summary>
         /// 创建原子级别的消除Action
         /// </summary>

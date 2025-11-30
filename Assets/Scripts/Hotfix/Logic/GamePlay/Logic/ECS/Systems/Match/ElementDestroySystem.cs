@@ -55,8 +55,8 @@ namespace Hotfix.Logic.GamePlay
             
             if (hasAnyDestroy)
             {
-                // 6. 通知掉落系统 发送一个 DropCheckRequest TODO....
-                // 只要有棋子消失，下一帧就需要检测掉落
+                // 6. 通知掉落系统 
+                _board.IsBoardDirty = true;
             }
         }
 

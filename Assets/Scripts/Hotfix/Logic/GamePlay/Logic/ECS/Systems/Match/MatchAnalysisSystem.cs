@@ -12,6 +12,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsFilter _requestFilter;
         private EcsPool<MatchRequestComponent> _requestPool;
         private EcsPool<PendingActionsComponent> _pendingActionPool;
+        private EcsPool<DropAnalysisComponent> _dropAnalysisPool;
         private EcsPool<ElementComponent> _elePool;
 
         private IMatchServiceFactory _matchServiceFactory;
@@ -31,6 +32,7 @@ namespace Hotfix.Logic.GamePlay
             _elePool = _world.GetPool<ElementComponent>();
             _requestPool = _world.GetPool<MatchRequestComponent>();
             _pendingActionPool = _world.GetPool<PendingActionsComponent>();
+            _dropAnalysisPool = _world.GetPool<DropAnalysisComponent>();
 
             _context = MemoryPool.Acquire<MatchRuleContext>();
             _context.World = _world;
@@ -60,7 +62,7 @@ namespace Hotfix.Logic.GamePlay
                     // 4. 如果生成了指令，创建 "指令包实体" 传递给 ActionExecutionSystem
                     if (actions.Count > 0)
                     {
-                        CreatePendingActions(actions);
+                        CreatePendingActions(actions,_context.BanDropElementId);
 
                         // 5. 锁定涉及的棋子状态，防止玩家重复操作或掉落系统干扰
                         LockEntitiesState(req.InvolvedEntities);
@@ -73,12 +75,17 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        private void CreatePendingActions(List<AtomicAction> actions)
+        private void CreatePendingActions(List<AtomicAction> actions,int banDropId)
         {
             // 创建一个新的实体，仅用于承载指令列表
             int actionEntity = _world.NewEntity();
             ref var pending = ref _pendingActionPool.Add(actionEntity);
             pending.Actions = actions;
+            
+            // 创建一个新的掉落规则实体，用于掉落系统使用
+            int dropEntity = _world.NewEntity();
+            ref var drop = ref _dropAnalysisPool.Add(dropEntity);
+            drop.BanDropElementId = banDropId;
         }
 
         private void LockEntitiesState(List<int> entities)

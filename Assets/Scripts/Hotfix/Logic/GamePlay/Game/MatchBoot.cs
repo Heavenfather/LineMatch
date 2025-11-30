@@ -59,6 +59,7 @@ namespace Hotfix.Logic.GamePlay
             _matchServiceContainer.RegisterSingleton<IElementResourceProvider, ElementResourceProvider>();
             _matchServiceContainer.RegisterSingleton<IElementTransitionRuleService, DefaultElementTransitionRule>();
             _matchServiceContainer.RegisterSingleton<IMatchRequestService, DefaultMatchRequestService>();
+            _matchServiceContainer.RegisterSingleton(new DropStrategyService());
 
             _gameWorkflow = new MatchGameWorkflow();
             _gameWorkflow.Initialize();

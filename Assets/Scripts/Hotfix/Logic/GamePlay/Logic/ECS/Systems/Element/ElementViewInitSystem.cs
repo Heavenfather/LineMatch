@@ -34,8 +34,8 @@ namespace Hotfix.Logic.GamePlay
                 ref readonly ElementMap config = ref _elementMapDB[elementData.ConfigId];
 
                 //------- 棋子通用的处理 ----------
-                // 1.设置层级排序
-                render.ViewInstance.SetSortingOrder(elementData.Layer);
+                // 1.设置层级排序  这里会和查找实体堆叠的逻辑冲突，先不要设置，由预制体设置固定值
+                // render.ViewInstance.SetSortingOrder(elementData.Layer);
 
                 // 2.Spine Idle处理
                 if (!string.IsNullOrEmpty(config.idleSpine) && render.ViewInstance.Spine != null)

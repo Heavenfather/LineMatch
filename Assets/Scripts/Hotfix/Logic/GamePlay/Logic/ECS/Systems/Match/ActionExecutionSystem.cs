@@ -298,6 +298,7 @@ namespace Hotfix.Logic.GamePlay
             {
                 foreach (var itemData in genData.GenItemsData)
                 {
+                    // 2. 创建实体
                     int newEntityId = _elementService.CreateElementEntity(
                         _context,
                         _matchService,
@@ -310,6 +311,7 @@ namespace Hotfix.Logic.GamePlay
 
                     // 3.立即将新实体注册到 Grid 数据中
                     RegisterToGrid(newEntityId,itemData.GenCoord.x, itemData.GenCoord.y, itemData.ElementSize.x, itemData.ElementSize.y);
+                    //后续就是交由ElementSpawnSystem 和 ElementViewInitSystem 来处理新生了
                 }
             }
         }
@@ -331,8 +333,7 @@ namespace Hotfix.Logic.GamePlay
                 }
             }
         }
-
-
+        
         // View 层回调接口
         public void OnVisualComplete(int actionEntity)
         {

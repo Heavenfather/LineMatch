@@ -15,6 +15,8 @@ namespace Hotfix.Logic.GamePlay
         private GameObject[] _gameObjects;
         private Dictionary<int, bool> _idx2HaveEntity = new Dictionary<int, bool>(); //索引映射该实体是否为空格子，true=空格子，false=非空格子
 
+        public bool IsBoardDirty { get; set; }
+        
         public LevelData LevelData { get; private set; }
 
         public int this[int x, int y]

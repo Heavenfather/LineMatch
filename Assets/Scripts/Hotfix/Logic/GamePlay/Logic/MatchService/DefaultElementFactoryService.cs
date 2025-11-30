@@ -70,6 +70,7 @@ namespace Hotfix.Logic.GamePlay
             eleComp.MaxEliminateCount = config.eliminateCount;
             eleComp.Layer = config.sortOrder;
             eleComp.LogicState = ElementLogicalState.Idle;
+            eleComp.HoldGrid = config.holdGrid;
             MatchBoot.Container.Resolve<IElementTransitionRuleService>()
                 .TryTransitionToNextElement(config.Id, matchService, out var nextId);
             eleComp.NextConfigId = nextId;

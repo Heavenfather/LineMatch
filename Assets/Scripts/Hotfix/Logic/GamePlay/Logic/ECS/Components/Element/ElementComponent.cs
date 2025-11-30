@@ -6,7 +6,7 @@ namespace Hotfix.Logic.GamePlay
     /// <summary>
     /// 棋子元素组件，标记元素实体
     /// </summary>
-    public struct ElementComponent
+    public struct ElementComponent : IEcsAutoReset<ElementComponent>
     {
         /// <summary>
         /// 配置表ID
@@ -67,10 +67,20 @@ namespace Hotfix.Logic.GamePlay
         /// 是否可进行普通匹配
         /// </summary>
         public bool IsMatchable;
+
+        /// <summary>
+        /// 总占格数量
+        /// </summary>
+        public float HoldGrid;
         
         /// <summary>
         /// 棋子逻辑状态
         /// </summary>
         public ElementLogicalState LogicState;
+
+        public void AutoReset(ref ElementComponent c)
+        {
+            LogicState = ElementLogicalState.Idle;
+        }
     }
 }

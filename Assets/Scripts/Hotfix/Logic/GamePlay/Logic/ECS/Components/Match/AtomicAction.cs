@@ -8,9 +8,10 @@ namespace Hotfix.Logic.GamePlay
     public struct AtomicAction
     {
         public MatchActionType Type;
-        public int TargetEntity;      // 作用对象
-        public Vector2Int GridPos;    // 作用位置
-        public int Value;             // 参数 (如扣除层数值、分数、变身ID，不同的指令类型有不同的含义)
-        public object ExtraData;      // 额外数据 （具体含义根据指令类型而定）
+        public int TargetEntity; // 作用对象
+        public Vector2Int GridPos; // 作用位置
+        public int Value; // 参数 (如扣除层数值、分数、变身ID，不同的指令类型有不同的含义)
+        public int UseItemId;// 如果是使用道具，则记录道具ID 
+        public object ExtraData; // 额外数据 （具体含义根据指令类型而定）
     }
 }

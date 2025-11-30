@@ -7,6 +7,11 @@ namespace Hotfix.Logic.GamePlay
     public interface IBoard
     {
         /// <summary>
+        /// 棋盘是否需要刷新
+        /// </summary>
+        public bool IsBoardDirty { get; set; }
+        
+        /// <summary>
         /// 关卡数据
         /// </summary>
         LevelData LevelData { get; }

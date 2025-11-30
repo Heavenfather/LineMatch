@@ -8,10 +8,12 @@ namespace Hotfix.Logic.GamePlay
         public IBoard Board;
         public IMatchService MatchService;
         public MatchRequestComponent Request;
+        public int BanDropElementId;
         
         public void Clear()
         {
             Request = default;
+            BanDropElementId = 0;
         }
     }
 }
