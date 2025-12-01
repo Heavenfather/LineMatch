@@ -32,8 +32,11 @@ namespace Hotfix.Logic.GamePlay
 
             // 2. 再填充格子内的棋子 (内容)
             FillElements(levelData);
+            
+            CalculateGlobalDropQuotas();
+            AnalyzeTargetColumns();
         }
-        
+
         private void CreateGridEntities(LevelData levelData)
         {
             for (int x = 0; x < levelData.gridCol; x++)
@@ -50,7 +53,7 @@ namespace Hotfix.Logic.GamePlay
                     gridComp.StackedEntityIds = new List<int>();
 
                     // 注册到 Board 查找表
-                    _context.Board.RegisterGridEntity(x, y, gridEntity,gridComp.IsBlank);
+                    _context.Board.RegisterGridEntity(x, y, gridEntity, gridComp.IsBlank);
                 }
             }
         }
@@ -78,7 +81,8 @@ namespace Hotfix.Logic.GamePlay
                                 int height = Mathf.Max(info.ElementHeight, 1);
 
                                 // 创建实体
-                                int entity = _elementFactory.CreateElementEntity(_context, _matchService, info.ElementId,
+                                int entity = _elementFactory.CreateElementEntity(_context, _matchService,
+                                    info.ElementId,
                                     x, y, width, height);
 
                                 // 将实体ID填入它占据的所有格子中
@@ -142,5 +146,108 @@ namespace Hotfix.Logic.GamePlay
             return true;
         }
 
+        /// <summary>
+        /// 计算掉落目标和棋盘上已配置的棋子缺口
+        /// </summary>
+        private void CalculateGlobalDropQuotas()
+        {
+            LevelData level = _context.CurrentLevel;
+            var quotas = _context.MatchStateContext.GlobalDropQuotas;
+            quotas.Clear();
+            ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
+
+            // 1. 遍历所有收集目标
+            if (level.target == null) return;
+
+            foreach (var target in level.target)
+            {
+                int targetId = target.targetId;
+                int totalNeeded = target.targetNum;
+
+                // 2. 统计棋盘上已经存在的数量
+                int existingCount = 0;
+
+                foreach (var rowData in level.grid)
+                {
+                    if (rowData == null) continue;
+                    foreach (var cell in rowData)
+                    {
+                        if (cell == null || cell.elements == null) continue;
+                        foreach (var ele in cell.elements)
+                        {
+                            // 循环类型的元素不要计算缺口
+                            if(db.IsCircleElement(ele.id))
+                                continue;
+                            // 扩散出来的元素也不需要计算缺口
+                            if (db[ele.id].elementType == ElementType.RandomDiffuse && !string.IsNullOrEmpty(db[ele.id].extra))
+                            {
+                                if (int.TryParse(db[ele.id].extra.Split("|")[0], out int genId))
+                                {
+                                    if(genId == targetId)
+                                        continue;
+                                }
+                            }
+
+                            if (MatchElementUtil.IsContributingToTarget(targetId, ele.id))
+                            {
+                                existingCount++;
+                            }
+                        }
+                    }
+                }
+
+                // 3. 计算缺口
+                int dropQuota = totalNeeded - existingCount;
+                if (dropQuota < 0) dropQuota = 0;
+
+                // 4. 记录配额
+                if (!quotas.ContainsKey(targetId))
+                {
+                    quotas.Add(targetId, dropQuota);
+                }
+            }
+        }
+        
+        private void AnalyzeTargetColumns()
+        {
+            LevelData level = _context.CurrentLevel;
+            var targetCols = _context.MatchStateContext.TargetValidColumns;
+            targetCols.Clear();
+
+            if (level.target == null || level.grid == null) return;
+
+            // 1. 遍历所有目标类型
+            foreach (var target in level.target)
+            {
+                int targetId = target.targetId;
+
+                // 2. 扫描棋盘
+                for (int x = 0; x < level.grid.Length; x++) // x 是列
+                {
+                    var colData = level.grid[x];
+                    if (colData == null) continue;
+
+                    for (int y = 0; y < colData.Length; y++)
+                    {
+                        var cell = colData[y];
+                        if (cell == null || cell.elements == null) continue;
+
+                        foreach (var ele in cell.elements)
+                        {
+                            // 该位置的棋子是否属于当前目标
+                            if (MatchElementUtil.IsContributingToTarget(targetId, ele.id))
+                            {
+                                // 记录这一列为该目标的合法产出地
+                                _context.MatchStateContext.RegisterTargetColumn(targetId, x);
+                        
+                                // 既然这一列已经合法了，不需要再看这一列的其他行了，跳出到下一列
+                                goto NextColumn; 
+                            }
+                        }
+                    }
+                    NextColumn:;
+                }
+            }
+        }
     }
 }

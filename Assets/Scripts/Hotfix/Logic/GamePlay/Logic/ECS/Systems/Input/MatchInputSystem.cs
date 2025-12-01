@@ -415,6 +415,8 @@ namespace Hotfix.Logic.GamePlay
             input.SelectedGridIds.Clear();
             input.IsRectangle = false;
             input.LoopTargetEntityId = -1;
+            
+            _context.MatchStateContext.RoundClear();
         }
 
         private bool IsNeighbor(int gridA, int gridB)

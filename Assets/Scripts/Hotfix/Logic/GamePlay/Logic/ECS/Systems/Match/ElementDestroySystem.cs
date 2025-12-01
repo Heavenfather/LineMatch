@@ -65,18 +65,33 @@ namespace Hotfix.Logic.GamePlay
             // 1. 获取棋子位置
             if (!_posPool.Has(entity)) return;
             ref var pos = ref _posPool.Get(entity);
-            // 遍历整个棋盘，找出含有该实体的格子；因为有些棋子是横跨的
-            _board.ForeachBoard(gridEntity =>
+            ref var eleCom = ref _elementPool.Get(entity);
+            for (int x = 0; x < eleCom.Width; x++)
             {
-                // 2. 从格子的堆叠列表中移除自己
-                ref var grid = ref _gridPool.Get(gridEntity);
-                if (grid.IsBlank)
-                    return;
-                if (grid.StackedEntityIds != null && grid.StackedEntityIds.Contains(entity))
+                int eleX = x + pos.X;
+                for (int y = 0; y < eleCom.Height; y++)
                 {
-                    grid.StackedEntityIds.Remove(entity);
+                    int eleY = y + pos.Y;
+                    var gridEntity = _board[eleX, eleY];
+                    ref var grid = ref _gridPool.Get(gridEntity);
+                    if (grid.StackedEntityIds != null && grid.StackedEntityIds.Contains(entity))
+                    {
+                        grid.StackedEntityIds.Remove(entity);
+                    }
                 }
-            });
+            }
+            // 遍历整个棋盘，找出含有该实体的格子；因为有些棋子是横跨的
+            // _board.ForeachBoard(gridEntity =>
+            // {
+            //     // 2. 从格子的堆叠列表中移除自己
+            //     ref var grid = ref _gridPool.Get(gridEntity);
+            //     if (grid.IsBlank)
+            //         return;
+            //     if (grid.StackedEntityIds != null && grid.StackedEntityIds.Contains(entity))
+            //     {
+            //         grid.StackedEntityIds.Remove(entity);
+            //     }
+            // });
         }
 
         private void RecycleView(int entity)

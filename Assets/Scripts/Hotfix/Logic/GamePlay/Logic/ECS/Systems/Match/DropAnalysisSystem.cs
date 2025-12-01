@@ -17,6 +17,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsPool<GridCellComponent> _gridPool;
         private EcsPool<ElementComponent> _elePool;
         private EcsPool<ElementPositionComponent> _posPool;
+        private EcsPool<ElementRenderComponent> _eleRenderPool;
 
         private EcsPool<FallAnimationComponent> _fallAnimPool;
         private EcsPool<DropSpawnRequestComponent> _spawnReqPool;
@@ -33,6 +34,7 @@ namespace Hotfix.Logic.GamePlay
             _gridPool = _world.GetPool<GridCellComponent>();
             _elePool = _world.GetPool<ElementComponent>();
             _posPool = _world.GetPool<ElementPositionComponent>();
+            _eleRenderPool = _world.GetPool<ElementRenderComponent>();
 
             _fallAnimPool = _world.GetPool<FallAnimationComponent>();
             _spawnReqPool = _world.GetPool<DropSpawnRequestComponent>();
@@ -43,8 +45,6 @@ namespace Hotfix.Logic.GamePlay
 
         public void Run(IEcsSystems systems)
         {
-            // 如果还有正在播放掉落动画的，不进行分析
-            if (_fallAnimPool.GetRawDenseItemsCount() > 1) return;
             if (!_board.IsBoardDirty)
                 return;
             bool hasAnyChange = false;
@@ -143,7 +143,7 @@ namespace Hotfix.Logic.GamePlay
             int entity = _world.NewEntity();
             ref var req = ref _spawnReqPool.Add(entity);
             req.Column = col;
-            req.TargetRows = rows;
+            req.TargetRows = new List<int>(rows);
         }
 
         /// <summary>
@@ -243,6 +243,12 @@ namespace Hotfix.Logic.GamePlay
             ref var grid = ref _gridPool.Get(gridEntity);
             if (grid.StackedEntityIds == null) grid.StackedEntityIds = new List<int>();
             grid.StackedEntityIds.Add(entityId);
+            ref var renderCom = ref _eleRenderPool.Get(entityId);
+            if (renderCom.ViewInstance != null)
+            {
+                var gridViewInstance = _board.GetGridInstance(x, y);
+                renderCom.ViewInstance.transform.SetParent(gridViewInstance?.transform);
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ using GameCore.Singleton;
 using Hotfix.Define;
 using Hotfix.EventParameter;
 using HotfixCore.Module;
+using UnityEngine;
 
 namespace HotfixLogic.Match
 {
@@ -124,6 +125,19 @@ namespace HotfixLogic.Match
                 }
             }
             return _targetElements.ContainsKey(targetId) && _targetElements[targetId] <= 0;
+        }
+
+        public int GetTargetRemainNum(int elementId)
+        {
+            if (TryGetTargetByOtherEvolution(elementId, out var id))
+            {
+                if (_targetElements.TryGetValue(id, out var num))
+                {
+                    return Mathf.Max(0, num);
+                }
+            }
+
+            return Mathf.Max(0, _targetElements.GetValueOrDefault(elementId, 0));
         }
 
         public bool CheckTargetComplete(int elementId)

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using HotfixLogic.Match;
 using UnityEngine;
+using Logger = GameCore.Log.Logger;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -19,7 +21,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsFilter _filter;
         private EcsPool<FallAnimationComponent> _fallAnimPool;
         private EcsPool<GridCellComponent> _gridPool;
-        
+
         private List<DropAnalysisComponent> _dropAnalysis;
         private EcsPool<DropAnalysisComponent> _dropAnalysisPool;
         private EcsFilter _dropAnalysisFilter;
@@ -38,7 +40,8 @@ namespace Hotfix.Logic.GamePlay
             _dropStrategy = MatchBoot.Container.Resolve<DropStrategyService>();
 
             _filter = _world.Filter<DropSpawnRequestComponent>().End();
-
+            
+             _dropAnalysisPool = _world.GetPool<DropAnalysisComponent>();
             _dropAnalysis = new List<DropAnalysisComponent>();
             _dropAnalysisFilter = _world.Filter<DropAnalysisComponent>().End();
         }
@@ -47,12 +50,12 @@ namespace Hotfix.Logic.GamePlay
         {
             // 先在同一帧生成掉落分析产生的请求
             foreach (var entity in _dropAnalysisFilter)
-            { 
+            {
                 ref var dropAnalysis = ref _dropAnalysisPool.Get(entity);
                 _dropAnalysis.Add(dropAnalysis);
                 _world.DelEntity(entity);
             }
-            
+
             foreach (var entity in _filter)
             {
                 ref var req = ref _reqPool.Get(entity);
@@ -63,6 +66,14 @@ namespace Hotfix.Logic.GamePlay
                 {
                     // 1. 调用策略计算
                     int configId = _dropStrategy.CalculateDropId(req.Column, row, _context, _dropAnalysis);
+                    if (configId <= 0)
+                    {
+                        Logger.Error($" {req.Column} 没有随机到掉落元素？");
+                        continue;
+                    }
+
+                    _context.MatchStateContext.AddDropCount(configId);
+                    UpdateGlobalQuota(configId, _context.MatchStateContext);
 
                     // 2. 创建实体逻辑位置直接设为  视觉位置需要设在棋盘上方，并播放掉落动画
                     int newEntity = _factory.CreateElementEntity(
@@ -87,11 +98,31 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        private void AddSpawnFallAnimation(int entity, int col, int targetRow,int offset)
+        private void UpdateGlobalQuota(int configId, MatchStateContext state)
+        {
+            // 1. 如果直接是 TargetID
+            if (state.GlobalDropQuotas.ContainsKey(configId))
+            {
+                state.ConsumeDropQuota(configId);
+            }
+
+            // 2. 如果是变体
+            foreach (var key in state.GlobalDropQuotas.Keys)
+            {
+                if (key == configId) continue; // 已经扣过了
+
+                if(MatchElementUtil.IsContributingToTarget(key,configId))
+                {
+                    state.ConsumeDropQuota(key);
+                }
+            }
+        }
+
+        private void AddSpawnFallAnimation(int entity, int col, int targetRow, int offset)
         {
             // 给新生成的棋子加动画组件
             // View 层解析到 Y < 0 时，会转换成屏幕上方的世界坐标
-            ref var anim = ref _world.GetPool<FallAnimationComponent>().Add(entity);
+            ref var anim = ref _fallAnimPool.Add(entity);
             anim.FromGrid = new Vector2Int(col, offset);
             anim.ToGrid = new Vector2Int(col, targetRow);
         }

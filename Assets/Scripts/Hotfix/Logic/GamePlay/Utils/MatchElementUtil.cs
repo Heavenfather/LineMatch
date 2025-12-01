@@ -74,6 +74,29 @@ namespace Hotfix.Logic.GamePlay
         }
 
         /// <summary>
+        /// 判断两个元素是否变体的关系
+        /// target->source target能否通过一步一步消除后形成source
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static bool IsContributingToTarget(int source, int target)
+        {
+            ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
+            if (db.IsCircleElement(source))
+                return false;
+            if (source == target)
+                return true;
+
+            List<int> nextIds = new();
+            db.RefElementNextList(target, ref nextIds);
+            if (nextIds.Count > 0 && nextIds.Contains(source))
+                return true;
+            
+            return false;
+        }
+
+        /// <summary>
         /// 为所有待消除的棋子添加“旁消”检测
         /// </summary>
         /// <param name="ctx">规则上下文</param>

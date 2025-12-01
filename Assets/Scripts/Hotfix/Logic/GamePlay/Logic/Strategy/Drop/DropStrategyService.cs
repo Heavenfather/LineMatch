@@ -11,16 +11,18 @@ namespace Hotfix.Logic.GamePlay
         {
             _strategies = new List<IDropStrategy>();
 
-            // 1. 初始化策略链 一定要注意添加顺序
+            // ----------- 初始化策略链 一定要注意添加顺序 -------------
             // 优先级高 越先添加会越早判断拿出棋子
+            
+            // 1.配置掉落目标
+            _strategies.Add(new DropFlagStrategy());
+            // 2.安全检查任务目标
+            _strategies.Add(new TargetSafetyStrategy());
 
-            // 任务/障碍物强制填充
-            _strategies.Add(new TaskFillDropStrategy());
-
-            // 动态难度 (根据棋盘颜色分布微调概率)
+            // 动态难度
             // _strategies.Add(new DynamicDifficultyStrategy());
 
-            // 保底：纯权重随机
+            // 最后保底：纯权重随机
             _defaultStrategy = new WeightedRandomDropStrategy();
         }
 

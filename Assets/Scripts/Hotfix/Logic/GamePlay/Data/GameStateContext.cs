@@ -7,7 +7,7 @@ namespace Hotfix.Logic.GamePlay
     /// 游戏状态上下文
     /// </summary>
     public class GameStateContext : IStateContext
-    {        
+    {
         /// <summary>
         /// ECS世界
         /// </summary>
@@ -32,6 +32,11 @@ namespace Hotfix.Logic.GamePlay
         /// 棋盘
         /// </summary>
         public IBoard Board { get; set; }
+        
+        /// <summary>
+        /// 消除数据记录上下文信息
+        /// </summary>
+        public MatchStateContext MatchStateContext { get; set; }
         
         /// <summary>
         /// 匹配服务工厂

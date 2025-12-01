@@ -41,6 +41,7 @@ namespace Hotfix.Logic.GamePlay
                         ref var positionComponent = ref _positionPool.Get(entity);
                         var parent = _board.GetGridInstance(positionComponent.X, positionComponent.Y);
                         go.transform.SetParent(parent == null ? _defaultElementRoot : parent.transform);
+                        // go.name = $"{renderComponent.PrefabKey}_{entity}";
                         // 绑定View视图
                         var view = go.GetOrAddComponent<ElementView>();
                         view.SetVisible(renderComponent.IsVisible);

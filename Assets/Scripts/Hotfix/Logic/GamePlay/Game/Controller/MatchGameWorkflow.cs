@@ -24,6 +24,7 @@ namespace Hotfix.Logic.GamePlay
             _gameStateContext = new GameStateContext();
             _gameStateContext.SceneView = new GamePlaySceneView();
             _gameStateContext.Board = new Board();
+            _gameStateContext.MatchStateContext = new MatchStateContext();
             
             _workflowStateMachine.Context = _gameStateContext;
             _workflowStateMachine.RegisterState(GameState.Initialize.ToString(), new GameInitializeState());
@@ -105,6 +106,7 @@ namespace Hotfix.Logic.GamePlay
             {
                 await ChangeGameState(GameState.End);
                 _workflowStateMachine.MachineExit();
+                _gameStateContext.MatchStateContext.Clear();
                 _isWorking = false;
                 _currentGameState = GameState.None;
             }).Forget();

@@ -13,12 +13,12 @@ namespace Hotfix.Logic.GamePlay
             IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
             // 1.遍历所有连线的棋子 包括同色的棋子
             ctx.BanDropElementId = ctx.Request.ConfigId;
-            foreach (var entity in ctx.Request.InvolvedEntities)
-            {
-                // 生成扣次数指令
-                ref var comp = ref ctx.World.GetPool<ElementComponent>().Get(entity);
-                outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, comp.OriginGridPosition, 1, entity));
-            }
+            // foreach (var entity in ctx.Request.InvolvedEntities)
+            // {
+            //     // 生成扣次数指令
+            //     ref var comp = ref ctx.World.GetPool<ElementComponent>().Get(entity);
+            //     outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, comp.OriginGridPosition, 1, entity));
+            // }
 
             // 所有同色的
             EcsFilter normalElementFilter = ctx.World.Filter<NormalElementComponent>().Include<ElementComponent>()
@@ -26,11 +26,11 @@ namespace Hotfix.Logic.GamePlay
             foreach (var entity in normalElementFilter)
             {
                 ref var ele = ref ctx.World.GetPool<ElementComponent>().Get(entity);
-                if (ele.LogicState == ElementLogicalState.Idle && ele.ConfigId == ctx.Request.ConfigId)
+                if (ele.LogicState == ElementLogicalState.Idle && 
+                    ele.ConfigId == ctx.Request.ConfigId)
                 {
                     // 生成扣次数指令
-                    outActions.Add(
-                        factory.CreateAtomicAction(MatchActionType.Damage, ele.OriginGridPosition, 1, entity));
+                    outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, ele.OriginGridPosition, 1, entity));
                 }
             }
 

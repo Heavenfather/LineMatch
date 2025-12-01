@@ -15,7 +15,7 @@ namespace Hotfix.Logic.GamePlay
         private int[] _cachedRates;
         private int _totalWeight; // 总权重
         private EcsFilter _inputFilter;
-        private List<int> _banList;
+        private List<int> _banList = new List<int>();
 
         public int GetDropElementId(int col, int row, GameStateContext context,List<DropAnalysisComponent> dropAnalysisComponents)
         {
@@ -32,12 +32,12 @@ namespace Hotfix.Logic.GamePlay
             {
                 return 0;
             }
+
+            _banList.Clear();
             
             int currentTotalWeight = _totalWeight;
             if (dropAnalysisComponents != null && dropAnalysisComponents.Count > 0)
             {
-                _banList ??= new List<int>();
-                _banList.Clear();
                 
                 for (int i = 0; i < dropAnalysisComponents.Count; i++)
                 {
@@ -73,7 +73,8 @@ namespace Hotfix.Logic.GamePlay
             for (int i = 0; i < _cachedDropIds.Length; i++)
             {
                 // 如果被Ban了，直接跳过，不参与权重扣除
-                if (hasBan && IsBannedId(_cachedDropIds[i], _banList)) continue;
+                if (hasBan && IsBannedId(_cachedDropIds[i], _banList))
+                    continue;
 
                 int rate = _cachedRates[i];
                 if (rnd < rate)
