@@ -24,7 +24,8 @@ namespace Hotfix.Logic.GamePlay
             else if (config.elementType == ElementType.Bomb)
             {
                 priority = 3;
-                world.GetPool<BombComponent>().Add(entity);
+                ref var com = ref world.GetPool<BombComponent>().Add(entity);
+                com.AutoBomb = context.CurrentMatchType == MatchServiceType.TowDots; //TowDots模式下，当它形成时自动进行爆炸
             }
             else if(config.elementType == ElementType.ColorBall)
             {

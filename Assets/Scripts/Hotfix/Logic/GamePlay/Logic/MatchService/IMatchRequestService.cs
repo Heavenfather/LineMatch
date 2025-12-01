@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -35,6 +36,6 @@ namespace Hotfix.Logic.GamePlay
         /// <summary>
         /// 单个炸弹
         /// </summary>
-        void RequestBomb(EcsWorld world, int bombEntity);
+        void RequestBomb(EcsWorld world, Vector2Int bombCoord);
     }
 }

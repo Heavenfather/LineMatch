@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -58,18 +59,19 @@ namespace Hotfix.Logic.GamePlay
                 Type = MatchRequestType.Rocket,
                 TriggerEntity = rocketEntity,
                 TargetEntity = -1,
-                InvolvedEntities = null //掉落是没有选中触发体的，它作用的是本身
+                InvolvedEntities = null
             });
         }
 
-        public void RequestBomb(EcsWorld world, int bombEntity)
+        public void RequestBomb(EcsWorld world, Vector2Int bombCoord)
         {
             CreateMatchRequest(world, new MatchRequestComponent
             {
                 Type = MatchRequestType.Bomb,
-                TriggerEntity = bombEntity,
+                TriggerEntity = -1,
                 TargetEntity = -1,
-                InvolvedEntities = null //掉落是没有选中触发体的，它作用的是本身
+                InvolvedEntities = null,
+                ExtraData = bombCoord
             });
         }
 
@@ -87,6 +89,7 @@ namespace Hotfix.Logic.GamePlay
             comp.InvolvedEntities = reqData.InvolvedEntities;
             comp.ConfigId = reqData.ConfigId;
             comp.ItemId = reqData.ItemId;
+            comp.ExtraData = reqData.ExtraData;
         }
     }
 }

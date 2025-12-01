@@ -36,6 +36,7 @@ namespace Hotfix.Logic.GamePlay
         private int _inputEntity; // 存储单例组件的实体ID
         private int _gridLayerMask;
         private int _vibrationForce = 0;
+        private bool _isVisualSquareState = false; // 记录当前视觉上是否是全选状态
 
         public void Init(IEcsSystems systems)
         {
@@ -243,19 +244,17 @@ namespace Hotfix.Logic.GamePlay
             // 1. 防止重复添加
             if (input.SelectedGridIds.Contains(nextGridEntity))
             {
-                int index = input.SelectedGridIds.IndexOf(nextGridEntity);
-                // 排除倒数第一（自己）和倒数第二（回退），剩下的都是“更早的点”
-                // 只要连到更早的点，且是邻居，就是闭环
-                if (index >= 0 && (input.SelectedGridIds.Count - index) >= 4)
+                if (_matchService.IsGeometricSquare(input.SelectedGridIds, nextGridEntity))
                 {
                     // 还需要检查是否是邻居
                     int lastGrid = input.SelectedGridIds[^1];
-                    if (IsNeighbor(lastGrid, nextGridEntity) && !IsSelectedHaveFunctionElement(in input.SelectedEntityIds))
+                    if (IsNeighbor(lastGrid, nextGridEntity) &&
+                        !IsSelectedHaveFunctionElement(in input.SelectedEntityIds))
                     {
                         input.IsRectangle = true;
                         input.LoopTargetEntityId = nextElementEntity;
-                        // 触发全屏同类型选中效果
-                        SetSquareHighlight(input.FirstConfigId, true, input.SelectedEntityIds);
+                        // 刷新状态
+                        UpdateSquareState(ref input);
 
                         // 触发闭环震动/音效
                         CommonUtil.DeviceVibration(_vibrationForce + 1, 0.1f);
@@ -352,10 +351,28 @@ namespace Hotfix.Logic.GamePlay
             // 更新元素渲染选中效果
             ref var normal = ref _normalPool.Get(elementEntity);
             UpdateNormalState(ref normal, ElementScaleState.PunchOnce, NormalFlashIconAniType.SelectedFlash);
-
+            // 每次加点后，检查是否触发方格效果
+            UpdateSquareState(ref input);
+            
             // 播放选中音效/震动
             CommonUtil.DeviceVibration(_vibrationForce, 0.1f);
             PlayLinkAudio(input.SelectedGridIds.Count);
+        }
+
+        private void UpdateSquareState(ref MatchInputComponent input)
+        {
+            // 要么是物理闭环，要么是数量达标
+            bool isSuperCount = _matchService.IsCountSquare(input.SelectedEntityIds.Count);
+            bool shouldBeSquareMode = input.IsRectangle || isSuperCount;
+
+            // 只有状态发生改变时才执行高亮刷新
+            if (_isVisualSquareState != shouldBeSquareMode)
+            {
+                _isVisualSquareState = shouldBeSquareMode;
+
+                // 触发全屏高亮 或 恢复路径高亮
+                SetSquareHighlight(input.FirstConfigId, _isVisualSquareState, input.SelectedEntityIds);
+            }
         }
 
         private void RemoveLastSelection(ref MatchInputComponent input)
@@ -373,9 +390,8 @@ namespace Hotfix.Logic.GamePlay
             {
                 input.IsRectangle = false;
                 input.LoopTargetEntityId = -1; // 重置闭合点
-                // 取消全屏高亮，恢复路径高亮
-                SetSquareHighlight(input.FirstConfigId, false, input.SelectedEntityIds);
             }
+            UpdateSquareState(ref input);
 
             PlayLinkAudio(input.SelectedGridIds.Count);
         }
@@ -406,7 +422,7 @@ namespace Hotfix.Logic.GamePlay
                     int oneEntity = input.SelectedEntityIds[0];
                     _matchService.CheckOneElementRequest(_world, oneEntity);
                 }
-                
+
                 ClearSelectionVisuals(input.SelectedEntityIds);
             }
 
@@ -415,7 +431,8 @@ namespace Hotfix.Logic.GamePlay
             input.SelectedGridIds.Clear();
             input.IsRectangle = false;
             input.LoopTargetEntityId = -1;
-            
+            _isVisualSquareState = false;
+
             _context.MatchStateContext.RoundClear();
         }
 

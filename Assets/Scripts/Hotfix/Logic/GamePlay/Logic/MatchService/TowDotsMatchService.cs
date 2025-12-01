@@ -12,6 +12,8 @@ namespace Hotfix.Logic.GamePlay
     {
         private IBoardSpawnStrategy _spawnStrategy;
 
+        public MatchServiceType MatchServiceType => MatchServiceType.TowDots;
+        
         public int[] SpecialElements { get; } = new int[] { 9, 12, 13, 14, 15, 16 };
 
         public bool IsBlockingBaseElement(int elementId)
@@ -149,10 +151,36 @@ namespace Hotfix.Logic.GamePlay
             return actions;
         }
 
+        public List<Vector2Int> GetBombPos(Vector2Int bombPos)
+        {
+            //爆炸范围3x3
+            return MatchPosUtil.GetEightNeighborPos(bombPos);
+        }
+
         public IMatchRule GetMatchRule(EcsWorld world, List<int> selectEntities)
         {
             // 这里的情况更复杂 需要完全配合 CanConnect 函数来精准匹配规则 TODO....
             return null;
+        }
+
+        public bool IsGeometricSquare(List<int> currentPathGridIds, int nextGridId)
+        {
+            if (currentPathGridIds == null) return false;
+            
+            int index = currentPathGridIds.IndexOf(nextGridId);
+            
+            // 连接到的点必须在路径中，且距离队尾至少4个点（防止回退误判）
+            if (index >= 0 && (currentPathGridIds.Count - index) >= 4)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool IsCountSquare(int connectCount)
+        {
+            int threshold = ConfigMemoryPool.Get<ConstConfigDB>().GetConfigIntVal("MatchLineCCount");
+            return connectCount >= threshold;
         }
 
         private List<GenItemData> GetGenItems(MatchRuleContext context, List<Vector2Int> closedLoop)

@@ -12,6 +12,8 @@ namespace Hotfix.Logic.GamePlay
     {
         private IBoardSpawnStrategy _spawnStrategy;
 
+        public MatchServiceType MatchServiceType => MatchServiceType.Normal;
+
         public int[] SpecialElements { get; } = new int[] { 8, 9, 10, 11 };
 
         public bool IsBlockingBaseElement(int elementId)
@@ -102,7 +104,14 @@ namespace Hotfix.Logic.GamePlay
             var bombComponent = world.GetPool<BombComponent>();
             if (bombComponent.Has(elementEntity))
             {
-                requestService.RequestBomb(world, elementEntity);
+                ref var bombCom = ref world.GetPool<BombComponent>().Get(elementEntity);
+                bombCom.AutoBomb = true;
+                // 交给炸弹系统去处理
+                var stablePool = world.GetPool<BoardStableCheckTag>();
+                if(!stablePool.Has(elementEntity))
+                    stablePool.Add(elementEntity);
+                
+                // requestService.RequestBomb(world, elementEntity);
                 return;
             }
         }
@@ -136,6 +145,25 @@ namespace Hotfix.Logic.GamePlay
             actions.Add(scoreAction);
 
             return actions;
+        }
+
+        public List<Vector2Int> GetBombPos(Vector2Int bombPos)
+        {
+            //爆炸周围5x5的格子
+            List<Vector2Int> bombCoords = new List<Vector2Int>();
+            for (int dx = -2; dx <= 2; dx++)
+            {
+                for (int dy = -2; dy <= 2; dy++)
+                {
+                    Vector2Int bombCoord = new Vector2Int(bombPos.x + dx, bombPos.y + dy);
+                    if (bombCoord != bombPos) // 避免重复添加中心点
+                    {
+                        bombCoords.Add(bombCoord);
+                    }
+                }
+            }
+
+            return bombCoords;
         }
 
         public IMatchRule GetMatchRule(EcsWorld world, List<int> selectEntities)
@@ -207,6 +235,26 @@ namespace Hotfix.Logic.GamePlay
             }
 
             return null;
+        }
+
+        public bool IsGeometricSquare(List<int> currentPathGridIds, int nextGridId)
+        {
+            if (currentPathGridIds == null) return false;
+
+            int index = currentPathGridIds.IndexOf(nextGridId);
+
+            // 连接到的点必须在路径中，且距离队尾至少4个点（防止回退误判）
+            if (index >= 0 && (currentPathGridIds.Count - index) >= 4)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsCountSquare(int connectCount)
+        {
+            return false;
         }
 
         private GenItemData GenElementData(List<Vector2Int> closedLoop, out bool result, out OneTakeScoreType scoreType)

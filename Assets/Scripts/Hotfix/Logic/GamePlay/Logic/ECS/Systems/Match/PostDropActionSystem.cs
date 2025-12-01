@@ -5,12 +5,54 @@
     /// </summary>
     public class PostDropActionSystem : IEcsInitSystem, IEcsRunSystem
     {
+        private EcsWorld _world;
+
+        private EcsFilter _fallingFilter;
+        private EcsFilter _requestFilter;
+        private EcsFilter _elementFilter;
+
+        private EcsPool<ElementComponent> _elePool;
+        private EcsPool<BoardStableCheckTag> _checkTagPool;
+
         public void Init(IEcsSystems systems)
         {
+            _world = systems.GetWorld();
+
+            _elePool = _world.GetPool<ElementComponent>();
+            _checkTagPool = _world.GetPool<BoardStableCheckTag>();
+
+            _fallingFilter = _world.Filter<FallAnimationComponent>().End();
+            _requestFilter = _world.Filter<MatchRequestComponent>().End();
+
+            // 筛选所有所有需要棋盘稳定后再执行的棋子 (排除掉已经有Tag的，防止重复添加)
+            // ------------ 为了避免给不必要的棋子添加Tag，就在这里指定所有需要添加Tag的元素 ------------
+            _elementFilter = _world.Filter<ElementComponent>().
+                Include<BombComponent>() //炸弹，在TowDots模式下需要自动爆
+                .Exclude<BoardStableCheckTag>() // 如果已经有Tag就不重复加
+                .End();
         }
 
         public void Run(IEcsSystems systems)
         {
+            // 1. 只有棋盘稳定时才派发通知
+            if (_fallingFilter.GetEntitiesCount() > 0 ||
+                _requestFilter.GetEntitiesCount() > 0)
+            {
+                return;
+            }
+
+            // 2. 给所有合格的棋子发"通知单"
+            foreach (var entity in _elementFilter)
+            {
+                ref var ele = ref _elePool.Get(entity);
+
+                // 只有 Idle 状态且没有被视觉锁定的棋子才配接收通知
+                if (ele.LogicState == ElementLogicalState.Idle)
+                {
+                    if (!_checkTagPool.Has(entity))
+                        _checkTagPool.Add(entity);
+                }
+            }
         }
     }
 }

@@ -10,6 +10,11 @@ namespace Hotfix.Logic.GamePlay
     public interface IMatchService
     {
         /// <summary>
+        /// 消除服务类型
+        /// </summary>
+        MatchServiceType MatchServiceType { get; }
+        
+        /// <summary>
         /// 特殊元素ID数组
         /// </summary>
         int[] SpecialElements { get; }
@@ -61,9 +66,31 @@ namespace Hotfix.Logic.GamePlay
         List<AtomicAction> MatchRuleAction(MatchRuleContext context, List<Vector2Int> closedLoopPaths);
 
         /// <summary>
+        /// 获取炸弹的爆炸范围
+        /// </summary>
+        /// <param name="bombPos"></param>
+        /// <returns></returns>
+        List<Vector2Int> GetBombPos(Vector2Int bombPos);
+        
+        /// <summary>
         /// 根据连线的棋子获取消除规则,然后执行 Evaluate 函数
         /// </summary>
         /// <returns></returns>
         IMatchRule GetMatchRule(EcsWorld world, List<int> selectEntities);
+        
+        /// <summary>
+        /// 判断是否形成几何上的方格闭环
+        /// </summary>
+        /// <param name="currentPathGridIds">当前已选中的格子路径</param>
+        /// <param name="nextGridId">即将连接的格子</param>
+        /// <returns>是否构成闭环</returns>
+        bool IsGeometricSquare(List<int> currentPathGridIds, int nextGridId);
+
+        /// <summary>
+        /// 判断是否满足触发方格效果的数量条件
+        /// </summary>
+        /// <param name="connectCount">当前连线数量</param>
+        /// <returns>是否满足</returns>
+        bool IsCountSquare(int connectCount);
     }
 }

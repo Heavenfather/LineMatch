@@ -90,10 +90,9 @@ namespace Hotfix.Logic.GamePlay
         public static List<Vector2Int> GetEightNeighborPos(Vector2Int gridPos)
         {
             List<Vector2Int> neighbor = new List<Vector2Int>();
-            var dirs = ValidateManager.Instance.EightNeighborDirs;
-            for (int i = 0; i < dirs.Length; i++)
+            for (int i = 0; i < EightNeighborDirs.Length; i++)
             {
-                Vector2Int pos = gridPos + dirs[i];
+                Vector2Int pos = gridPos + EightNeighborDirs[i];
                 neighbor.Add(pos);
             }
 
