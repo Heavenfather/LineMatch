@@ -78,7 +78,6 @@ namespace Hotfix.Logic.GamePlay
             // 动态设置宽高和原点
             eleComp.Width = width;
             eleComp.Height = height;
-            eleComp.OriginGridPosition = new Vector2Int(x, y);
             eleComp.IsMovable = config.isMovable;
             eleComp.IsMatchable = false;
 
@@ -148,8 +147,9 @@ namespace Hotfix.Logic.GamePlay
             var elementPool = world.GetPool<ElementComponent>();
             ref var elementCom = ref elementPool.Get(entity);
             ref var destroyTagCom = ref destroyTagPool.Add(entity);
-            destroyTagCom.X = elementCom.OriginGridPosition.x;
-            destroyTagCom.Y = elementCom.OriginGridPosition.y;
+            ref var posCom = ref world.GetPool<ElementPositionComponent>().Get(entity);
+            destroyTagCom.X = posCom.X;
+            destroyTagCom.Y = posCom.Y;
             destroyTagCom.ConfigId = elementCom.ConfigId;
             destroyTagCom.EntityId = entity;
         }

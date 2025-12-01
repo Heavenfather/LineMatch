@@ -14,11 +14,6 @@ namespace Hotfix.Logic.GamePlay
         public int ConfigId;
 
         /// <summary>
-        /// 对于多格物体，记录原始位置 确保渲染的准确位置
-        /// </summary>
-        public Vector2Int OriginGridPosition;
-
-        /// <summary>
         ///  类型
         /// </summary>
         public ElementType Type;

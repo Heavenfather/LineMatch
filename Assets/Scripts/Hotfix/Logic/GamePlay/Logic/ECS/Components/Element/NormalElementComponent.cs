@@ -2,7 +2,7 @@
 
 namespace Hotfix.Logic.GamePlay
 {
-    public struct NormalElementComponent
+    public struct NormalElementComponent : IEcsAutoReset<NormalElementComponent>
     {
         /// <summary>
         /// 是否需要更新棋子颜色
@@ -29,5 +29,10 @@ namespace Hotfix.Logic.GamePlay
         public float FlashStartScale;
         public float FlashEndScale;
         public float FlashDuration;
+        
+        public void AutoReset(ref NormalElementComponent c)
+        {
+            IsOtherElementHandleThis = false;
+        }
     }
 }

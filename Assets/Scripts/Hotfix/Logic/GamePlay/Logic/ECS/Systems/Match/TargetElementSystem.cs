@@ -18,6 +18,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsPool<ElementComponent> _elePool;
         private EcsPool<GridCellComponent> _gridPool;
         private EcsPool<NormalElementComponent> _normalElement;
+        private EcsPool<ElementPositionComponent> _posPool;
         private IBoard _board;
 
         public void Init(IEcsSystems systems)
@@ -30,6 +31,7 @@ namespace Hotfix.Logic.GamePlay
             _eliminatedFilter = _world.Filter<EliminatedTag>().Include<NormalElementComponent>().Include<ElementComponent>().End();
             _targetFilter = _world.Filter<TargetElementComponent>().Include<ElementComponent>().End();
             _normalElement = _world.GetPool<NormalElementComponent>();
+            _posPool = _world.GetPool<ElementPositionComponent>();
 
             _elePool = _world.GetPool<ElementComponent>();
         }
@@ -94,8 +96,9 @@ namespace Hotfix.Logic.GamePlay
             // 1.让 collectedTargetEntities 所有实体飞向 targetEntity
             Sequence seq = DOTween.Sequence();
             ref var elementCom = ref _elePool.Get(targetEntity);
-            Vector3 endPos = MatchPosUtil.CalculateWorldPosition(elementCom.OriginGridPosition.x,
-                elementCom.OriginGridPosition.y, elementCom.Width, elementCom.Height, ElementDirection.None);
+            ref var posCom = ref _posPool.Get(targetEntity);
+            Vector3 endPos = MatchPosUtil.CalculateWorldPosition(posCom.X,
+                posCom.Y, elementCom.Width, elementCom.Height, ElementDirection.None);
             int index = 0;
             foreach (var eliminateEntity in collectedTargetEntities)
             {

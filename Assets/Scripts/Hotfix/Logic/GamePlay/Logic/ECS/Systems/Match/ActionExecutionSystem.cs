@@ -2,6 +2,7 @@
 using GameConfig;
 using HotfixLogic.Match;
 using UnityEngine;
+using Logger = GameCore.Log.Logger;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -65,12 +66,14 @@ namespace Hotfix.Logic.GamePlay
 
                 // 3. 遍历执行所有指令（合并后的）
                 // 先执行所有即时动作，如果有异步动作，执行并挂锁
+                int testCout = 0;
                 for (int i = 0; i < mergedActions.Count; i++)
                 {
-                    var action = pending.Actions[i];
+                    var action = mergedActions[i];
                     switch (action.Type)
                     {
                         case MatchActionType.Damage:
+                            testCout++;
                             ApplyDamage(action);
                             break;
                         case MatchActionType.AddScore:

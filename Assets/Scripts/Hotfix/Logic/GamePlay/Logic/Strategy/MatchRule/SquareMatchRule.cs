@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using GameConfig;
 using UnityEngine;
+using Logger = GameCore.Log.Logger;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -13,26 +14,21 @@ namespace Hotfix.Logic.GamePlay
             IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
             // 1.遍历所有连线的棋子 包括同色的棋子
             ctx.BanDropElementId = ctx.Request.ConfigId;
-            // foreach (var entity in ctx.Request.InvolvedEntities)
-            // {
-            //     // 生成扣次数指令
-            //     ref var comp = ref ctx.World.GetPool<ElementComponent>().Get(entity);
-            //     outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, comp.OriginGridPosition, 1, entity));
-            // }
-
-            // 所有同色的
             EcsFilter normalElementFilter = ctx.World.Filter<NormalElementComponent>().Include<ElementComponent>()
-                .Include<ElementRenderComponent>().End();
+                .Include<ElementRenderComponent>().Include<ElementPositionComponent>().End();
             foreach (var entity in normalElementFilter)
             {
                 ref var ele = ref ctx.World.GetPool<ElementComponent>().Get(entity);
+                ref var posCom = ref ctx.World.GetPool<ElementPositionComponent>().Get(entity);
                 if (ele.LogicState == ElementLogicalState.Idle && 
                     ele.ConfigId == ctx.Request.ConfigId)
                 {
                     // 生成扣次数指令
-                    outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, ele.OriginGridPosition, 1, entity));
+                    outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, new Vector2Int(posCom.X, posCom.Y), 1, entity));
                 }
             }
+
+            // Logger.Debug($"总共生成伤害指令:{outActions.Count}");
 
             var closedPaths = GetFinalClosedLoopItems(ctx.World, ctx.Request.InvolvedEntities);
             // 2. 生成加分指令 

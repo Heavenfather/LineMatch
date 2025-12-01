@@ -94,8 +94,9 @@ namespace Hotfix.Logic.GamePlay
 
                 // 销毁请求
                 _world.DelEntity(entity);
-                _dropAnalysis.Clear();
             }
+            if(_dropAnalysis.Count > 0)
+                _dropAnalysis.Clear();
         }
 
         private void UpdateGlobalQuota(int configId, MatchStateContext state)

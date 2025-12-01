@@ -247,6 +247,7 @@ namespace Hotfix.Logic.GamePlay
         private bool TryGenGridItem(EcsWorld world, List<int> elementEntities, out GenItemData genItem)
         {
             var elementCom = world.GetPool<ElementComponent>();
+            var posPool = world.GetPool<ElementPositionComponent>();
             genItem = default;
             if (elementEntities.Count == 1)
             {
@@ -279,10 +280,11 @@ namespace Hotfix.Logic.GamePlay
                 if (normalElementEntity == -1)
                     return false;
                 // 3.可以在此生成功能棋子
+                ref var posCom = ref posPool.Get(normalElementEntity);
                 genItem = new GenItemData()
                 {
                     ConfigId = ElementType2ConfigId(ElementType.Bomb),
-                    GenCoord = elementCom.Get(normalElementEntity).OriginGridPosition,
+                    GenCoord = new Vector2Int(posCom.X, posCom.Y),
                     ElementSize = new Vector2Int(elementCom.Get(normalElementEntity).Width, elementCom.Get(normalElementEntity).Height)
                 };
                 return true;

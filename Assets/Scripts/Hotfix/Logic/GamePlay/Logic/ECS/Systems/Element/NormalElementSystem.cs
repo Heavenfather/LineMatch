@@ -32,7 +32,7 @@ namespace Hotfix.Logic.GamePlay
                 ref var normalElementComponent = ref _normalElementPool.Get(entity);
                 // 如果棋子正处于 Acting 状态，又没有被其它元素处理的话，它就自己标签自己死亡
                 ref var elementComponent = ref _elementPool.Get(entity);
-                if (_elementPool.Get(entity).LogicState == ElementLogicalState.Acting && !normalElementComponent.IsOtherElementHandleThis)
+                if (elementComponent.LogicState == ElementLogicalState.Acting && !normalElementComponent.IsOtherElementHandleThis)
                 {
                     elementComponent.LogicState = ElementLogicalState.Dying;
                     _elementService.AddDestroyElementTag2Entity(_world, entity);

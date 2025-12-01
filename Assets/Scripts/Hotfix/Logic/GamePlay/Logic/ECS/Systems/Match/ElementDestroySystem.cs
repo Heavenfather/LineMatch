@@ -112,7 +112,8 @@ namespace Hotfix.Logic.GamePlay
             if (_elementPool.Has(entity))
             {
                 ref var element = ref _elementPool.Get(entity);
-                GameObject grid = _board.GetGridInstance(element.OriginGridPosition.x, element.OriginGridPosition.y);
+                ref var posCom = ref _posPool.Get(entity);
+                GameObject grid = _board.GetGridInstance(posCom.X, posCom.Y);
                 MatchEffectManager.Instance.PlayObjectEffect(element.ConfigId, null, grid?.transform);
             }
             // 简单的消失动画，复杂的在消除发生时已经由 ActionExecutionSystem 处理了
