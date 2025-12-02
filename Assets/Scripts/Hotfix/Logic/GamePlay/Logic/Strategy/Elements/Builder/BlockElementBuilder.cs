@@ -8,6 +8,8 @@ namespace Hotfix.Logic.GamePlay
 
         public void Build(GameStateContext context, int entity, in ElementMap config)
         {
+            var world = context.World;
+            world.GetPool<BlockElementComponent>().Add(entity);
         }
 
         public bool IsElementCanSelectDelete(EcsWorld world, int entity)

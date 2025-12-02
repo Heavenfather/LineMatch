@@ -45,6 +45,9 @@ namespace Hotfix.Logic.GamePlay
         public bool CanConnect(EcsWorld world, in ElementComponent fromComponent, in ElementComponent toComponent,
             int matchConfigId, int fromEntity, int toEntity, List<int> currentSelectedEntities)
         {
+            if (fromComponent.Type == ElementType.Bomb || toComponent.Type == ElementType.Bomb)
+                return false;
+            
             //星爆点和普通棋子 星爆点本身有颜色，需要同色棋子
             bool isStarBombAndNormal =
                 (fromComponent.Type == ElementType.StarBomb && toComponent.Type == ElementType.Normal) ||
@@ -159,7 +162,15 @@ namespace Hotfix.Logic.GamePlay
 
         public IMatchRule GetMatchRule(EcsWorld world, List<int> selectEntities)
         {
-            // 这里的情况更复杂 需要完全配合 CanConnect 函数来精准匹配规则 TODO....
+            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
+            var elementPool = world.GetPool<SpecialElementComponent>();
+            foreach (var entity in selectEntities)
+            {
+                if (!elementPool.Has(entity))
+                    continue;
+                // TowDots的特殊棋子，统一使用 TowDotsFunctionElementRule 规则处理
+                return factory.GetMatchRule(MatchRequestType.TowDotsFunctionElement);
+            }
             return null;
         }
 

@@ -35,8 +35,7 @@ namespace Hotfix.Logic.GamePlay
             ref var fromEle = ref elePool.Get(fromEntity);
             ref var toEle = ref elePool.Get(toEntity);
 
-            // 1. 这里的逻辑对应旧代码 GridSystem.CanMatchTo
-            // 普通棋子不管哪种消除方式都是一样的，就是检查颜色是否相同
+            // 1.普通棋子不管哪种消除方式都是一样的，就是检查颜色是否相同
             if (fromEle.Type == ElementType.Normal && toEle.Type == ElementType.Normal)
                 return fromEle.ConfigId == toEle.ConfigId;
 

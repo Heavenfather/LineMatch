@@ -349,11 +349,15 @@ namespace Hotfix.Logic.GamePlay
             input.SelectedEntityIds.Add(elementEntity);
 
             // 更新元素渲染选中效果
-            ref var normal = ref _normalPool.Get(elementEntity);
-            UpdateNormalState(ref normal, ElementScaleState.PunchOnce, NormalFlashIconAniType.SelectedFlash);
-            // 每次加点后，检查是否触发方格效果
-            UpdateSquareState(ref input);
-            
+            // 先只处理普通元素的选中效果
+            if (_normalPool.Has(elementEntity))
+            {
+                ref var normal = ref _normalPool.Get(elementEntity);
+                UpdateNormalState(ref normal, ElementScaleState.PunchOnce, NormalFlashIconAniType.SelectedFlash);
+                // 每次加点后，检查是否触发方格效果
+                UpdateSquareState(ref input);
+            }
+
             // 播放选中音效/震动
             CommonUtil.DeviceVibration(_vibrationForce, 0.1f);
             PlayLinkAudio(input.SelectedGridIds.Count);
@@ -382,8 +386,11 @@ namespace Hotfix.Logic.GamePlay
             input.SelectedEntityIds.RemoveAt(input.SelectedEntityIds.Count - 1);
 
             // 取消该棋子的高亮
-            ref var normal = ref _normalPool.Get(removedEntity);
-            UpdateNormalState(ref normal, ElementScaleState.None, NormalFlashIconAniType.None);
+            if (_normalPool.Has(removedEntity))
+            {
+                ref var normal = ref _normalPool.Get(removedEntity);
+                UpdateNormalState(ref normal, ElementScaleState.None, NormalFlashIconAniType.None);
+            }
 
             // 如果之前是闭环，现在打破了 -> 恢复全盘状态
             if (input.IsRectangle)

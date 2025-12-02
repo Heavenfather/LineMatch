@@ -45,6 +45,7 @@ namespace Hotfix.Logic.GamePlay
                 ref var comp = ref world.GetPool<SearchDotComponent>().Add(entity);
                 comp.SearchDotBaseElementId =
                     RandomInitColor(context.CurrentLevel.initColor, context.CurrentLevel.initColorRate);
+                comp.IsColorDirty = true;
             }
             else if(config.elementType == ElementType.TowDotsColoredDot)
             {
@@ -81,7 +82,7 @@ namespace Hotfix.Logic.GamePlay
 
         private int RandomInitColor(int[] colorIds, int[] weights)
         {
-            //先简单处理 TODO....
+            // 纯随机其中一个点颜色
             return colorIds[Random.Range(0, colorIds.Length - 1)];
         }
     }

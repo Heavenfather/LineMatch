@@ -152,6 +152,26 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
+        public static void AddSingleScore(in ElementComponent element)
+        {
+            ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
+            ref readonly ElementMap config = ref db[element.ConfigId];
+            MatchManager.Instance.AddScore(config.score);
+        }
+
+        public static void AddSingleScore(EcsWorld world, int entityId)
+        {
+            ref var element = ref world.GetPool<ElementComponent>().Get(entityId);
+            AddSingleScore(element);
+        }
+        
+        public static void AddSingleScore(int configId)
+        {
+            ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
+            ref readonly ElementMap config = ref db[configId];
+            MatchManager.Instance.AddScore(config.score);
+        }
+
         /// <summary>
         /// 是否循环类型元素
         /// </summary>

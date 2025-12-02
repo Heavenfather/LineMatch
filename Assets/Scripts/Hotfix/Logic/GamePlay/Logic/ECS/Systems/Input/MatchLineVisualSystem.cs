@@ -13,6 +13,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsFilter _filter;
         private EcsPool<MatchInputComponent> _inputPool;
         private EcsPool<ElementPositionComponent> _posPool;
+        private EcsPool<SearchDotComponent> _searchPool;
         private EcsPool<ElementComponent> _elePool;
         private Camera _mainCamera;
 
@@ -22,6 +23,7 @@ namespace Hotfix.Logic.GamePlay
             _inputPool = _world.GetPool<MatchInputComponent>();
             _posPool = _world.GetPool<ElementPositionComponent>();
             _elePool = _world.GetPool<ElementComponent>();
+            _searchPool = _world.GetPool<SearchDotComponent>();
             _filter = _world.Filter<MatchInputComponent>().End();
             
             var context = systems.GetShared<GameStateContext>();
@@ -49,7 +51,13 @@ namespace Hotfix.Logic.GamePlay
             {
                 int firstEntity = input.SelectedEntityIds[0];
                 ref var ele = ref _elePool.Get(firstEntity);
-                Color c = MatchElementUtil.GetElementColor(ele.ConfigId);
+                int configId = ele.ConfigId;
+                if (_searchPool.Has(firstEntity))
+                {
+                    ref var searchCom = ref _searchPool.Get(firstEntity);
+                    configId = searchCom.SearchDotBaseElementId;
+                }
+                Color c = MatchElementUtil.GetElementColor(configId);
                 LineController.Instance.SetLineColor(c);
             }
 

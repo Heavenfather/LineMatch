@@ -37,5 +37,12 @@ namespace Hotfix.Logic.GamePlay
         /// 单个炸弹
         /// </summary>
         void RequestBomb(EcsWorld world, Vector2Int bombCoord);
+
+        /// <summary>
+        /// 单个搜寻点被动爆炸
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="dotEntity"></param>
+        void RequestSearchDot(EcsWorld world, int dotEntity);
     }
 }

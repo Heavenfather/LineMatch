@@ -19,11 +19,6 @@
         BombAndColorBall, // 炸连彩球
         ColorBallAndColorBall, // 彩球连彩球
         ColorBallAndNormal, //彩球连普通棋子
-        TowDotsStarBomb, // TowDots模式的星爆点连普通棋子
-        TowDotsSearchDot, //TowDots模式的搜寻点连普通棋子
-        TowDotsHorizontalDotLine, //TowDots模式的横向点连普通棋子
-        TowDotsBombLineNormal, //TowDots模式的炸弹连普通棋子
-        TowDotsColorBallLineNormal, //TowDots模式的彩球连普通棋子
-        //TowDots的组合技，需求还不明确，TODO...
+        TowDotsFunctionElement,// TowDots的连线模式允许多个功能棋子相连，交由一个规则统一去处理
     }
 }
