@@ -10,10 +10,14 @@ namespace Hotfix.Logic.GamePlay
     /// </summary>
     public class GameInitializeState : IStateMachineContext<GameStateContext>
     {
+        // -------- ECS ------------
+        private EcsWorld _world;
+        private IEcsSystems _systems;
+
         public StateMachine<GameStateContext> StateMachine { get; set; }
-        
+
         public GameStateContext Context { get; set; }
-        
+
         public bool PerFrameExecute { get; } = false;
 
         public async UniTask OnEnter(CancellationToken token)
@@ -30,22 +34,72 @@ namespace Hotfix.Logic.GamePlay
                 Context.ServiceFactory.GetService(Context.CurrentMatchType));
             // 执行预加载
             await resourceProvider.PreloadResources(requiredIds, poolRoot);
+            
+            RegisterEcsWorld();
         }
 
         public async UniTask Execute(CancellationToken token)
         {
+            this.Context.Systems.Init();
             //场景加载完成后进入开始阶段
             await StateMachine.ChangeState(GameState.Start.ToString());
         }
 
         public async UniTask OnExit(CancellationToken token)
         {
-            
         }
 
         public UniTask<bool> IsCanSwitch(string newStateKey, CancellationToken token)
         {
             return UniTask.FromResult(true);
+        }
+
+
+        private void RegisterEcsWorld()
+        {
+            _world = new EcsWorld();
+            Context.World = _world;
+            _systems = new EcsSystems(_world, Context);
+            Context.Systems = _systems;
+            _systems
+                // !!!!!!!!!! 添加的顺序影响着每个系统的初始化逻辑和更新的先后顺序，谨慎思考添加顺序 !!!!!!!!!!
+                // 棋盘生命周期
+                .Add(new BoardRootSystem())
+                .Add(new BoardInitSystem())
+                .Add(new BoardRenderSystem())
+                // 棋子构建，棋子的渲染和创建
+                .Add(new ElementSpawnSystem())
+                .Add(new ElementViewInitSystem())
+                // 入场动画
+                .Add(new PieceSpawnAnimationSystem())
+                // ------------------------------------------------
+                .Add(new MatchInputSystem()) // 连线输入
+                .Add(new MatchLineVisualSystem())
+
+                // ----------- 消除匹配逻辑 这里一定要弄清楚消除的顺序 -------------------------
+                .Add(new MatchAnalysisSystem()) //消除分析
+                .Add(new ActionExecutionSystem()) //消除执行
+                // ---------- 不同类型棋子处理 各种棋子对消除执行的反应 ----------------
+                .Add(new LockVisualSystem())
+                .Add(new RocketSystem())
+                .Add(new BombSystem())
+                .Add(new TargetElementSystem())
+                .Add(new BackgroundElementSystem())
+                .Add(new BombElementSystem())
+                .Add(new SearchDotsSystem())
+
+                // Normal需要排在最后，因为其它棋子可能需要对它进行处理
+                .Add(new NormalElementSystem())
+                //------- 各个棋子处理完成格子逻辑 统一交由 ElementDestroySystem 执行回收 -------------
+                .Add(new ElementDestroySystem()) // 元素消除
+                .Add(new ProjectileSystem()) //生成新的棋子
+                .Add(new DropAnalysisSystem()) //处理掉落,分析和生产掉落数据
+                .Add(new DropElementSpawnSystem()) //掉落元素生成
+                .Add(new DropElementAnimationSystem()) //掉落元素动画
+                .Add(new PostDropActionSystem()) // 处理掉落渲染处理
+                .Add(new GameResultCheckSystem())
+                .Add(new GameSettlementSystem())
+                ;
         }
     }
 }

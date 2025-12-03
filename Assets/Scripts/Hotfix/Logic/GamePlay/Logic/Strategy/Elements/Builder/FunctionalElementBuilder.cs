@@ -25,7 +25,7 @@ namespace Hotfix.Logic.GamePlay
             {
                 priority = 3;
                 ref var com = ref world.GetPool<BombComponent>().Add(entity);
-                com.AutoBomb = context.CurrentMatchType == MatchServiceType.TowDots; //TowDots模式下，当它形成时自动进行爆炸
+                com.AutoBomb = false;
             }
             else if(config.elementType == ElementType.ColorBall)
             {

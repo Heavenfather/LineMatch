@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using HotfixCore.Module;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -8,6 +9,8 @@ namespace Hotfix.Logic.GamePlay
     /// </summary>
     public interface IGameWorkflow
     {
+        EventDispatcher EventDispatcher { get; }
+        
         /// <summary>
         /// 设置共享数据
         /// </summary>

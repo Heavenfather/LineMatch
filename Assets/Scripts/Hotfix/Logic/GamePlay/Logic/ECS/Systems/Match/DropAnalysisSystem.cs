@@ -21,6 +21,8 @@ namespace Hotfix.Logic.GamePlay
 
         private EcsPool<FallAnimationComponent> _fallAnimPool;
         private EcsPool<DropSpawnRequestComponent> _spawnReqPool;
+        private EcsFilter _requestFilter;
+        private EcsFilter _pendingFilter;
 
         private List<Vector2Int> _cachedSections;
         private List<int> _cachedSpawnRows;
@@ -35,7 +37,8 @@ namespace Hotfix.Logic.GamePlay
             _elePool = _world.GetPool<ElementComponent>();
             _posPool = _world.GetPool<ElementPositionComponent>();
             _eleRenderPool = _world.GetPool<ElementRenderComponent>();
-
+            _requestFilter = _world.Filter<MatchRequestComponent>().End();
+            _pendingFilter = _world.Filter<PendingActionsComponent>().End();
             _fallAnimPool = _world.GetPool<FallAnimationComponent>();
             _spawnReqPool = _world.GetPool<DropSpawnRequestComponent>();
 
@@ -47,6 +50,10 @@ namespace Hotfix.Logic.GamePlay
         {
             if (!_board.IsBoardDirty)
                 return;
+            if(_requestFilter.GetEntitiesCount() > 0)
+                return; //还有请求，不要分析
+            if(_pendingFilter.GetEntitiesCount() > 0)
+                return; //还有请求，不要分析
             bool hasAnyChange = false;
 
             // 1. 逐列处理

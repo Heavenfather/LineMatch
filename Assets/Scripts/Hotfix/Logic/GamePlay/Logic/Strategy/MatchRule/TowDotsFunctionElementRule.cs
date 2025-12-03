@@ -10,27 +10,37 @@ namespace Hotfix.Logic.GamePlay
 
         // 搜寻点目标数量，可以从配置读取
         private const int SearchTargetCount = 4;
+        private HashSet<int> _addedEntities = new HashSet<int>();
 
         public void Evaluate(MatchRuleContext context, ref List<AtomicAction> outActions)
         {
             var invokeEntities = context.Request.InvolvedEntities;
             var searchPool = context.World.GetPool<SearchDotComponent>();
-            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
-            var posPool = context.World.GetPool<ElementPositionComponent>();
+            if (_addedEntities.Count > 0)
+                _addedEntities.Clear();
+
             foreach (var entity in invokeEntities)
             {
                 if (searchPool.Has(entity))
                 {
                     RefSearchDotsActions(context, entity, ref outActions);
                 }
-                else
+                // else if() // 再处理其它的元素
+                MatchElementUtil.AddSingleScore(context.World, entity);
+            }
+
+            IMatchServiceFactory factory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
+            var posPool = context.World.GetPool<ElementPositionComponent>();
+
+            // 其它跟随着一起连线的棋子最后再添加伤害
+            foreach (var entity in invokeEntities)
+            {
+                if (!_addedEntities.Contains(entity))
                 {
-                    // 添加普通元素自身伤害
                     ref var posCom = ref posPool.Get(entity);
                     outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage,
                         new Vector2Int(posCom.X, posCom.Y), entity));
                 }
-                MatchElementUtil.AddSingleScore(context.World, entity);
             }
         }
 
@@ -42,11 +52,12 @@ namespace Hotfix.Logic.GamePlay
             // 1.添加对搜寻点自身的伤害
             outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, new Vector2Int(searchPos.X, searchPos.Y),
                 entity));
+            _addedEntities.Add(entity);
             // 2.添加延迟，等待搜寻点自身播放完发射动作
             outActions.Add(new AtomicAction
             {
                 Type = MatchActionType.Delay,
-                Value = 300
+                Value = 600
             });
             // 3.添加对搜寻点自身所搜到的点进行伤害
             var targetEntities = FindTargetEntities(context, entity);
@@ -55,7 +66,7 @@ namespace Hotfix.Logic.GamePlay
                 ref var targetPos = ref posPool.Get(targetEntity);
                 outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage,
                     new Vector2Int(targetPos.X, targetPos.Y), targetEntity));
-                
+                _addedEntities.Add(targetEntity);
                 MatchElementUtil.AddSingleScore(context.World, entity);
             }
         }

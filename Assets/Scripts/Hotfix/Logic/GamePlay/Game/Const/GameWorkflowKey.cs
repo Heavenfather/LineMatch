@@ -11,5 +11,7 @@
         /// 匹配类型
         /// </summary>
         public const string MatchType = "MatchType";
+
+        public const string MatchMainWindow = "MatchMainWindow";
     }
 }

@@ -257,6 +257,16 @@ namespace Hotfix.Logic.GamePlay
             return false;
         }
 
+        public int RandomFunctionElement()
+        {
+            int ran = Random.Range(0, 2);
+            if (ran == 0)
+                return 8;
+            if (ran == 1)
+                return 9;
+            return 11;
+        }
+
         private GenItemData GenElementData(List<Vector2Int> closedLoop, out bool result, out OneTakeScoreType scoreType)
         {
             result = true;

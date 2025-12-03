@@ -2,6 +2,9 @@
 using System.IO;
 using Cysharp.Threading.Tasks;
 using GameCore.Log;
+using HotfixCore.MemoryPool;
+using HotfixCore.Module;
+using HotfixLogic;
 using HotfixLogic.Match;
 
 namespace Hotfix.Logic.GamePlay
@@ -9,12 +12,14 @@ namespace Hotfix.Logic.GamePlay
     /// <summary>
     /// 消除匹配游戏工作流
     /// </summary>
-    public class MatchGameWorkflow : IGameWorkflow
+    public partial class MatchGameWorkflow : IGameWorkflow
     {
         private GameState _currentGameState = GameState.None;
 
         private StateMachine<GameStateContext> _workflowStateMachine;
         private GameStateContext _gameStateContext;
+        private MatchMainWindow _matchMainWindow;
+        private EventDispatcher _eventDispatcher;
         private bool _isWorking = false;
         private readonly Dictionary<string, object> _shareData = new Dictionary<string, object>(10);
 
@@ -31,8 +36,12 @@ namespace Hotfix.Logic.GamePlay
             _workflowStateMachine.RegisterState(GameState.Start.ToString(), new GameStartState());
             _workflowStateMachine.RegisterState(GameState.End.ToString(), new GameEndState());
             _workflowStateMachine.RegisterState(GameState.Pause.ToString(), new GamePauseState());
+            _workflowStateMachine.RegisterState(GameState.Settlement.ToString(), new GameSettlementState());
             _workflowStateMachine.RegisterState(GameState.Restart.ToString(), new GameRestartState());
         }
+
+        public EventDispatcher EventDispatcher => _eventDispatcher;
+        
 
         public T SetShare<T>(string key, T value)
         {
@@ -57,11 +66,16 @@ namespace Hotfix.Logic.GamePlay
                 Logger.Warning("GameWorkflow is working, can not start again");
                 return;
             }
-
+            
             _isWorking = true;
+            _matchMainWindow = GetShare<MatchMainWindow>(GameWorkflowKey.MatchMainWindow);
             _gameStateContext.CurrentMatchType = GetShare<MatchServiceType>(GameWorkflowKey.MatchType);
             _gameStateContext.CurrentLevel = GetShare<LevelData>(GameWorkflowKey.LevelData);
+            _gameStateContext.MatchStateContext.SetStep(_gameStateContext.CurrentLevel.stepLimit);
+            _gameStateContext.MatchMainWindow =_matchMainWindow;
             _currentGameState = GameState.Initialize;
+            _eventDispatcher = MemoryPool.Acquire<EventDispatcher>();
+            RegisterEvent();
             await _workflowStateMachine.StartMachine(GameState.Initialize.ToString());
         }
 
@@ -102,14 +116,18 @@ namespace Hotfix.Logic.GamePlay
 
         public void Exit()
         {
+            MemoryPool.Release(_eventDispatcher);
+            _eventDispatcher = null;
             UniTask.Create(async () =>
             {
                 await ChangeGameState(GameState.End);
                 _workflowStateMachine.MachineExit();
                 _gameStateContext.MatchStateContext.Clear();
                 _isWorking = false;
+                _shareData?.Clear();
                 _currentGameState = GameState.None;
             }).Forget();
         }
+        
     }
 }

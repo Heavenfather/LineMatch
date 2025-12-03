@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using HotfixCore.Utils;
+using HotfixLogic;
 using HotfixLogic.Match;
 using UnityEngine;
 using Logger = GameCore.Log.Logger;
@@ -13,7 +14,7 @@ namespace Hotfix.Logic.GamePlay
     {
         private static GameDIContainer _matchServiceContainer = null;
         public static GameDIContainer Container => _matchServiceContainer;
-        
+
         private static IGameWorkflow _gameWorkflow = null;
         public static IGameWorkflow GameWorkflow => _gameWorkflow;
 
@@ -21,22 +22,23 @@ namespace Hotfix.Logic.GamePlay
         {
             BootInitialize();
         }
-        
+
         /// <summary>
         /// 启动消除游戏
         /// </summary>
-        public static async UniTask BootStart(LevelData levelData, MatchServiceType matchType)
+        public static async UniTask BootStart(LevelData levelData, MatchServiceType matchType, MatchMainWindow window)
         {
             Logger.Debug("Match boot start");
             // 启动游戏工作流
-            _gameWorkflow.SetShare(GameWorkflowKey.LevelData, levelData);
+            _gameWorkflow.SetShare(GameWorkflowKey.LevelData,levelData);
             _gameWorkflow.SetShare(GameWorkflowKey.MatchType, matchType);
+            _gameWorkflow.SetShare(GameWorkflowKey.MatchMainWindow, window);
             await _gameWorkflow.WorkflowStart();
-            
+
             // 开始游戏更新循环
             UnityUtil.AddUpdateListener(BootUpdate);
         }
-        
+
         /// <summary>
         /// 退出消除游戏
         /// </summary>
@@ -46,7 +48,7 @@ namespace Hotfix.Logic.GamePlay
             UnityUtil.RemoveUpdateListener(BootUpdate);
             _gameWorkflow.Exit();
         }
-        
+
         private static void BootInitialize()
         {
             // 初始化依赖注入容器
@@ -63,7 +65,6 @@ namespace Hotfix.Logic.GamePlay
 
             _gameWorkflow = new MatchGameWorkflow();
             _gameWorkflow.Initialize();
-            
         }
 
         private static void BootUpdate()

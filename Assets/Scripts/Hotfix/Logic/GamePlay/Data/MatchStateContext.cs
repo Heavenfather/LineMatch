@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using Hotfix.Define;
+using Hotfix.EventParameter;
+using HotfixCore.Module;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -7,6 +10,24 @@ namespace Hotfix.Logic.GamePlay
     /// </summary>
     public class MatchStateContext
     {
+        private int _remainStep;
+        /// <summary>
+        /// 关卡剩余步数
+        /// </summary>
+        public int RemainStep
+        {
+            get
+            {
+                return _remainStep;
+            }
+            private set
+            {
+                _remainStep = value;
+                // 通知UI
+                G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepModify, EventOneParam<int>.Create(_remainStep));
+            }
+        }
+
         /// <summary>
         /// 记录掉落物的已生成数量 (Key: ConfigId, Value: Count)
         /// </summary>
@@ -95,6 +116,32 @@ namespace Hotfix.Logic.GamePlay
             {
                 list.Add(col);
             }
+        }
+
+        /// <summary>
+        /// 设置关卡步数
+        /// </summary>
+        /// <param name="total"></param>
+        public void SetStep(int total)
+        {
+            this.RemainStep = total;
+        }
+
+        /// <summary>
+        /// 添加步数
+        /// </summary>
+        /// <param name="count"></param>
+        public void AddStep(int count)
+        {
+            RemainStep += count;
+        }
+
+        /// <summary>
+        /// 扣除步数
+        /// </summary>
+        public void ResumeStep(int count = 1)
+        {
+            RemainStep -= count;
         }
 
         /// <summary>

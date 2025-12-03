@@ -10,6 +10,7 @@
         private EcsFilter _fallingFilter;
         private EcsFilter _requestFilter;
         private EcsFilter _elementFilter;
+        private EcsFilter _settlementFilter;
 
         private EcsPool<ElementComponent> _elePool;
         private EcsPool<BoardStableCheckTag> _checkTagPool;
@@ -23,6 +24,7 @@
 
             _fallingFilter = _world.Filter<FallAnimationComponent>().End();
             _requestFilter = _world.Filter<MatchRequestComponent>().End();
+            _settlementFilter = _world.Filter<GameSettlementComponent>().End();
 
             // 筛选所有所有需要棋盘稳定后再执行的棋子 (排除掉已经有Tag的，防止重复添加)
             // ------------ 为了避免给不必要的棋子添加Tag，就在这里指定所有需要添加Tag的元素 ------------
@@ -36,7 +38,8 @@
         {
             // 1. 只有棋盘稳定时才派发通知
             if (_fallingFilter.GetEntitiesCount() > 0 ||
-                _requestFilter.GetEntitiesCount() > 0)
+                _requestFilter.GetEntitiesCount() > 0 ||
+                _settlementFilter.GetEntitiesCount() > 0)
             {
                 return;
             }

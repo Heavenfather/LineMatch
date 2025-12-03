@@ -92,5 +92,11 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="connectCount">当前连线数量</param>
         /// <returns>是否满足</returns>
         bool IsCountSquare(int connectCount);
+
+        /// <summary>
+        /// 随机获取功能棋子Id
+        /// </summary>
+        /// <returns></returns>
+        int RandomFunctionElement();
     }
 }

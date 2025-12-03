@@ -13,7 +13,7 @@ namespace Hotfix.Logic.GamePlay
         private IBoardSpawnStrategy _spawnStrategy;
 
         public MatchServiceType MatchServiceType => MatchServiceType.TowDots;
-        
+
         public int[] SpecialElements { get; } = new int[] { 9, 12, 13, 14, 15, 16 };
 
         public bool IsBlockingBaseElement(int elementId)
@@ -47,7 +47,7 @@ namespace Hotfix.Logic.GamePlay
         {
             if (fromComponent.Type == ElementType.Bomb || toComponent.Type == ElementType.Bomb)
                 return false;
-            
+
             //星爆点和普通棋子 星爆点本身有颜色，需要同色棋子
             bool isStarBombAndNormal =
                 (fromComponent.Type == ElementType.StarBomb && toComponent.Type == ElementType.Normal) ||
@@ -59,11 +59,13 @@ namespace Hotfix.Logic.GamePlay
                 if (starBombPool.Has(entity))
                 {
                     ref var starBomb = ref starBombPool.Get(entity);
-                    int configId = fromComponent.Type == ElementType.Normal ? fromComponent.ConfigId : toComponent.ConfigId;
+                    int configId = fromComponent.Type == ElementType.Normal
+                        ? fromComponent.ConfigId
+                        : toComponent.ConfigId;
                     return starBomb.StarDotBaseElementId == configId;
                 }
             }
-            
+
             //搜寻点和普通棋子
             bool isSearchDotAndNormal =
                 (fromComponent.Type == ElementType.SearchDot && toComponent.Type == ElementType.Normal) ||
@@ -75,11 +77,13 @@ namespace Hotfix.Logic.GamePlay
                 if (searchPool.Has(entity))
                 {
                     ref var searchCom = ref searchPool.Get(entity);
-                    int configId = fromComponent.Type == ElementType.Normal ? fromComponent.ConfigId : toComponent.ConfigId;
+                    int configId = fromComponent.Type == ElementType.Normal
+                        ? fromComponent.ConfigId
+                        : toComponent.ConfigId;
                     return searchCom.SearchDotBaseElementId == configId;
                 }
             }
-            
+
             //白色的点可以和任意点连 也就是只要任意的棋子是 IsMatchable 那就是可连的
             return fromComponent.IsMatchable && toComponent.IsMatchable;
         }
@@ -171,20 +175,22 @@ namespace Hotfix.Logic.GamePlay
                 // TowDots的特殊棋子，统一使用 TowDotsFunctionElementRule 规则处理
                 return factory.GetMatchRule(MatchRequestType.TowDotsFunctionElement);
             }
+
             return null;
         }
 
         public bool IsGeometricSquare(List<int> currentPathGridIds, int nextGridId)
         {
             if (currentPathGridIds == null) return false;
-            
+
             int index = currentPathGridIds.IndexOf(nextGridId);
-            
+
             // 连接到的点必须在路径中，且距离队尾至少4个点（防止回退误判）
             if (index >= 0 && (currentPathGridIds.Count - index) >= 4)
             {
                 return true;
             }
+
             return false;
         }
 
@@ -192,6 +198,11 @@ namespace Hotfix.Logic.GamePlay
         {
             int threshold = ConfigMemoryPool.Get<ConstConfigDB>().GetConfigIntVal("MatchLineCCount");
             return connectCount >= threshold;
+        }
+
+        public int RandomFunctionElement()
+        {
+            return 9;
         }
 
         private List<GenItemData> GetGenItems(MatchRuleContext context, List<Vector2Int> closedLoop)
@@ -270,7 +281,7 @@ namespace Hotfix.Logic.GamePlay
                             if (gridCell.IsBlank)
                                 continue;
                             // 2.获取堆叠元素 判断添加格子上能否添加功能棋子
-                            if (TryGenGridItem(world, context.Request.InvolvedEntities, out var genItem))
+                            if (TryGenGridItem(world, gridCell.StackedEntityIds, out var genItem))
                             {
                                 genItems.Add(genItem);
                                 TaskManager.Instance.AddTaskCalculate(TaskTag.GenBomb);
@@ -288,18 +299,19 @@ namespace Hotfix.Logic.GamePlay
             var elementCom = world.GetPool<ElementComponent>();
             var posPool = world.GetPool<ElementPositionComponent>();
             genItem = default;
+            int normalElementEntity = -1;
             if (elementEntities.Count == 1)
             {
                 // 1.单元格上只有一个元素
                 ref var com = ref elementCom.Get(elementEntities[0]);
                 if (com.Type != ElementType.Normal)
                     return false; //不是普通元素不会生成
+                normalElementEntity = elementEntities[0];
             }
             else
             {
                 // 2.单元格上有多个元素 需要确定是否可以获取到普通颜色棋子
                 bool haveLock = false;
-                int normalElementEntity = -1;
                 for (int i = 0; i < elementEntities.Count; i++)
                 {
                     var entity = elementEntities[i];
@@ -311,25 +323,28 @@ namespace Hotfix.Logic.GamePlay
                     }
 
                     if (com.Type == ElementType.Normal)
+                    {
                         normalElementEntity = entity;
+                        break;
+                    }
                 }
 
                 if (haveLock)
                     return false; //这个格子不允许生成功能棋子
-                if (normalElementEntity == -1)
-                    return false;
-                // 3.可以在此生成功能棋子
-                ref var posCom = ref posPool.Get(normalElementEntity);
-                genItem = new GenItemData()
-                {
-                    ConfigId = ElementType2ConfigId(ElementType.Bomb),
-                    GenCoord = new Vector2Int(posCom.X, posCom.Y),
-                    ElementSize = new Vector2Int(elementCom.Get(normalElementEntity).Width, elementCom.Get(normalElementEntity).Height)
-                };
-                return true;
             }
 
-            return false;
+            if (normalElementEntity == -1)
+                return false;
+            // 3.可以在此生成功能棋子
+            ref var posCom = ref posPool.Get(normalElementEntity);
+            genItem = new GenItemData()
+            {
+                ConfigId = ElementType2ConfigId(ElementType.Bomb),
+                GenCoord = new Vector2Int(posCom.X, posCom.Y),
+                ElementSize = new Vector2Int(elementCom.Get(normalElementEntity).Width,
+                    elementCom.Get(normalElementEntity).Height)
+            };
+            return true;
         }
 
         private AtomicAction AddScoreAction(OneTakeScoreType scoreType, int configId, int count)
@@ -339,7 +354,6 @@ namespace Hotfix.Logic.GamePlay
             var action = factory.CreateAtomicAction(MatchActionType.AddScore,
                 value: db.CalScore(configId, count, scoreType));
             return action;
-            
         }
     }
 }

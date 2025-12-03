@@ -9,6 +9,7 @@ namespace Hotfix.Logic.GamePlay
     public class MatchAnalysisSystem : IEcsInitSystem, IEcsRunSystem, IEcsDestroySystem
     {
         private EcsWorld _world;
+        private MatchStateContext _stateContext;
         private EcsFilter _requestFilter;
         private EcsPool<MatchRequestComponent> _requestPool;
         private EcsPool<PendingActionsComponent> _pendingActionPool;
@@ -23,6 +24,7 @@ namespace Hotfix.Logic.GamePlay
         {
             _world = systems.GetWorld();
             var context = systems.GetShared<GameStateContext>();
+            _stateContext = context.MatchStateContext;
             _matchServiceFactory = MatchBoot.Container.Resolve<IMatchServiceFactory>();
             _matchService = context.ServiceFactory.GetService(context.CurrentMatchType);
 
@@ -47,6 +49,9 @@ namespace Hotfix.Logic.GamePlay
             {
                 ref var req = ref _requestPool.Get(entity);
 
+                // 是否是玩家主动执行的操作
+                bool isPlayerMove =
+                    (req.Type == MatchRequestType.PlayerLine || req.Type == MatchRequestType.PlayerSquare);
                 // 1. 根据请求类型获取规则
                 IMatchRule rule = _matchServiceFactory.GetMatchRule(req.Type);
 
@@ -62,12 +67,19 @@ namespace Hotfix.Logic.GamePlay
                     // 4. 如果生成了指令，创建 "指令包实体" 传递给 ActionExecutionSystem
                     if (actions.Count > 0)
                     {
-                        CreatePendingActions(actions,_context.BanDropElementId);
+                        CreatePendingActions(actions, _context.BanDropElementId);
 
                         // 5. 锁定涉及的棋子状态，防止玩家重复操作或掉落系统干扰
                         LockEntitiesState(req.InvolvedEntities);
+
+                        // 主动执行步骤，扣除步数
+                        if (isPlayerMove)
+                        {
+                            _stateContext.ResumeStep();
+                        }
                     }
                 }
+
 
                 // 6. 消费完成，立刻销毁请求实体
                 _world.DelEntity(entity);
@@ -75,13 +87,13 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        private void CreatePendingActions(List<AtomicAction> actions,int banDropId)
+        private void CreatePendingActions(List<AtomicAction> actions, int banDropId)
         {
             // 创建一个新的实体，仅用于承载指令列表
             int actionEntity = _world.NewEntity();
             ref var pending = ref _pendingActionPool.Add(actionEntity);
             pending.Actions = actions;
-            
+
             // 创建一个新的掉落规则实体，用于掉落系统使用
             int dropEntity = _world.NewEntity();
             ref var drop = ref _dropAnalysisPool.Add(dropEntity);

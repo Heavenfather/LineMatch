@@ -29,7 +29,7 @@ namespace Hotfix.Logic.GamePlay
 
             _filter = _world.Filter<ElementComponent>()
                 .Include<BoardStableCheckTag>()
-                .Include<BombComponent>()
+                .Include<BombComponent>().Include<EliminatedTag>()
                 .End();
         }
 
@@ -38,15 +38,15 @@ namespace Hotfix.Logic.GamePlay
             foreach (var entity in _filter)
             {
                 ref var bombCom = ref _bombPool.Get(entity);
-                if(bombCom.AutoBomb)
+                // if (bombCom.AutoBomb)
                 {
                     ref var posCom = ref _posPool.Get(entity);
                     _requestService.RequestBomb(_world, new Vector2Int(posCom.X, posCom.Y));
-                
+
                     _elementService.AddDestroyElementTag2Entity(_world, entity);
+                    // 立刻移除
+                    _stableCheckPool.Del(entity);
                 }
-                // 立刻移除
-                _stableCheckPool.Del(entity);
             }
         }
     }

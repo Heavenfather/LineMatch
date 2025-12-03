@@ -17,6 +17,9 @@
         
         /// 游戏重新开始
         Restart,
+        
+        // 游戏结算
+        Settlement,
 
         /// 游戏结束
         End,

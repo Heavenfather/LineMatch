@@ -40,8 +40,8 @@ namespace Hotfix.Logic.GamePlay
             _dropStrategy = MatchBoot.Container.Resolve<DropStrategyService>();
 
             _filter = _world.Filter<DropSpawnRequestComponent>().End();
-            
-             _dropAnalysisPool = _world.GetPool<DropAnalysisComponent>();
+
+            _dropAnalysisPool = _world.GetPool<DropAnalysisComponent>();
             _dropAnalysis = new List<DropAnalysisComponent>();
             _dropAnalysisFilter = _world.Filter<DropAnalysisComponent>().End();
         }
@@ -95,7 +95,8 @@ namespace Hotfix.Logic.GamePlay
                 // 销毁请求
                 _world.DelEntity(entity);
             }
-            if(_dropAnalysis.Count > 0)
+
+            if (_dropAnalysis.Count > 0)
                 _dropAnalysis.Clear();
         }
 
@@ -112,7 +113,7 @@ namespace Hotfix.Logic.GamePlay
             {
                 if (key == configId) continue; // 已经扣过了
 
-                if(MatchElementUtil.IsContributingToTarget(key,configId))
+                if (MatchElementUtil.IsContributingToTarget(key, configId))
                 {
                     state.ConsumeDropQuota(key);
                 }

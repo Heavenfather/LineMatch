@@ -1,4 +1,5 @@
 ﻿
+using HotfixLogic;
 using HotfixLogic.Match;
 
 namespace Hotfix.Logic.GamePlay
@@ -27,6 +28,8 @@ namespace Hotfix.Logic.GamePlay
         /// 当前场景视图
         /// </summary>
         public ISceneView SceneView { get; set; }
+        
+        public MatchMainWindow MatchMainWindow { get; set; }
         
         /// <summary>
         /// 棋盘
