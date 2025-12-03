@@ -38,6 +38,7 @@ namespace Hotfix.Logic.GamePlay
                 TriggerEntity = -1, // 道具没有 Trigger 实体
                 TargetEntity = -1,
                 TargetGridPos = targetGridPos,
+                TargetCoord = targetGridPos, // 道具使用位置
                 InvolvedEntities = null
             });
         }
@@ -98,6 +99,8 @@ namespace Hotfix.Logic.GamePlay
             comp.Type = reqData.Type;
             comp.TriggerEntity = reqData.TriggerEntity;
             comp.TargetEntity = reqData.TargetEntity;
+            comp.TargetGridPos = reqData.TargetGridPos;
+            comp.TargetCoord = reqData.TargetCoord;
             comp.InvolvedEntities = reqData.InvolvedEntities;
             comp.ConfigId = reqData.ConfigId;
             comp.ItemId = reqData.ItemId;

@@ -8,10 +8,8 @@ namespace Hotfix.Logic.GamePlay
     {
         private EcsWorld _world;
         private EcsFilter _filter;
-        private GameStateContext _context;
         private IElementFactoryService _elementService;
         private IMatchRequestService _requestService;
-        private EcsPool<ElementComponent> _elePool;
         private EcsPool<ElementPositionComponent> _posPool;
         private EcsPool<BoardStableCheckTag> _stableCheckPool;
         private EcsPool<BombComponent> _bombPool;
@@ -19,10 +17,8 @@ namespace Hotfix.Logic.GamePlay
         public void Init(IEcsSystems systems)
         {
             _world = systems.GetWorld();
-            _context = systems.GetShared<GameStateContext>();
             _elementService = MatchBoot.Container.Resolve<IElementFactoryService>();
             _requestService = MatchBoot.Container.Resolve<IMatchRequestService>();
-            _elePool = _world.GetPool<ElementComponent>();
             _posPool = _world.GetPool<ElementPositionComponent>();
             _stableCheckPool = _world.GetPool<BoardStableCheckTag>();
             _bombPool = _world.GetPool<BombComponent>();

@@ -12,6 +12,7 @@ namespace Hotfix.Logic.GamePlay
         public int TriggerEntity; // 触发者
         public int TargetEntity; // 目标者 (如交换对象/道具释放点)
         public Vector2Int TargetGridPos; // 目标格子
+        public Vector2Int TargetCoord; // 目标坐标（道具使用位置）
         public List<int> InvolvedEntities; // 所有涉及的棋子 (连线路径)
         public int ConfigId; // 涉及的颜色/配置ID
         public int ItemId; // 如果是 UseItem，记录道具ID

@@ -1595,21 +1595,23 @@ namespace HotfixLogic.Match
         {
             _elementColorMap ??= new Dictionary<int, Color>();
             LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
-            int id = Mathf.Max(1, db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel));
-            LevelMapImage config = db[id + 1];
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[1], out var color1))
+
+            var lineColorMap = db.GetLineColors(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel);
+
+            
+            if (ColorUtility.TryParseHtmlString(lineColorMap[1], out var color1))
                 _elementColorMap[1] = color1;
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[2], out var color2))
+            if (ColorUtility.TryParseHtmlString(lineColorMap[2], out var color2))
                 _elementColorMap[2] = color2;
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[3], out var color3))
+            if (ColorUtility.TryParseHtmlString(lineColorMap[3], out var color3))
                 _elementColorMap[3] = color3;
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[4], out var color4))
+            if (ColorUtility.TryParseHtmlString(lineColorMap[4], out var color4))
                 _elementColorMap[4] = color4;
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[5], out var color5))
+            if (ColorUtility.TryParseHtmlString(lineColorMap[5], out var color5))
                 _elementColorMap[5] = color5;
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[6], out var color6))
+            if (ColorUtility.TryParseHtmlString(lineColorMap[6], out var color6))
                 _elementColorMap[6] = color6;
-            if (ColorUtility.TryParseHtmlString(config.lineColorMap[7], out var color7))
+            if (ColorUtility.TryParseHtmlString(lineColorMap[7], out var color7))
                 _elementColorMap[7] = color7;
         }
 

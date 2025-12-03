@@ -13,7 +13,7 @@ namespace HotfixLogic.Match
         Trail,
         StepTrail
     }
-    
+
     public class TrailEmitter : MonoBehaviour
     {
         [SerializeField] private GameObject _trail;
@@ -23,13 +23,15 @@ namespace HotfixLogic.Match
         private Queue<GameObject> _trailPool = new Queue<GameObject>();
         private Queue<GameObject> _stepTrailPool = new Queue<GameObject>();
 
-        public void Emitter(Vector3 startPos, List<Vector3> endPositions, Action<int> onStepComplete, Action onComplete, TrailEmitterType type = TrailEmitterType.Trail)
+        public void Emitter(Vector3 startPos, List<Vector3> endPositions, Action<int> onStepComplete, Action onComplete,
+            TrailEmitterType type = TrailEmitterType.Trail)
         {
             if (endPositions == null || endPositions.Count <= 0)
             {
                 onComplete?.Invoke();
                 return;
             }
+
             ClearSequence();
 
             var emitterSequence = DOTween.Sequence();
@@ -53,31 +55,54 @@ namespace HotfixLogic.Match
                     {
                         obj = Instantiate(type == TrailEmitterType.Trail ? _trail : _stepTrail, this.transform);
                     }
-                    
+
                     obj.transform.position = startPos;
                     obj.transform.DOKill();
-                    obj.transform.DOMove(endPositions[index], MatchConst.TrailEmitterDuration).SetEase(Ease.OutQuad).OnComplete(() =>
-                    {
-                        try
+                    obj.transform.DOMove(endPositions[index], MatchConst.TrailEmitterDuration).SetEase(Ease.OutQuad)
+                        .OnComplete(() =>
                         {
-                            if (onStepComplete != null)
+                            try
                             {
-                                onStepComplete(index);
+                                if (onStepComplete != null)
+                                {
+                                    onStepComplete(index);
+                                }
                             }
-                        }
-                        finally
-                        {
-                            PushTrail(obj, type);
-                            loadedCount++;
-                            if (loadedCount >= total)
+                            finally
                             {
-                                onComplete?.Invoke();
+                                PushTrail(obj, type);
+                                loadedCount++;
+                                if (loadedCount >= total)
+                                {
+                                    onComplete?.Invoke();
+                                }
                             }
-                        }
-                    });
+                        });
                 });
             }
+
             emitterSequence.Play();
+        }
+
+        public void Emit(TrailEmitterType type, Vector3 startPos, Vector3 endPos, float duration,
+            Action onComplete = null)
+        {
+            // 1. 从池里取东西
+            GameObject effect = PopTrail(type);
+            if (effect == null)
+                effect = Instantiate(type == TrailEmitterType.Trail ? _trail : _stepTrail, this.transform);
+            effect.transform.position = startPos;
+            effect.SetActive(true);
+
+            // 2. 飞过去
+            effect.transform.DOMove(endPos, duration)
+                .SetEase(Ease.OutQuad)
+                .OnComplete(() =>
+                {
+                    // 3. 回收
+                    PushTrail(effect, type);
+                    onComplete?.Invoke();
+                });
         }
 
         private GameObject PopTrail(TrailEmitterType type)
@@ -94,6 +119,7 @@ namespace HotfixLogic.Match
                 trail.SetActive(true);
                 return trail;
             }
+
             if (type == TrailEmitterType.StepTrail)
             {
                 if (_stepTrailPool.Count <= 0)
@@ -115,7 +141,7 @@ namespace HotfixLogic.Match
             trail.SetActive(false);
             if (type == TrailEmitterType.Trail)
                 _trailPool.Enqueue(trail);
-            else if(type == TrailEmitterType.StepTrail)
+            else if (type == TrailEmitterType.StepTrail)
                 _stepTrailPool.Enqueue(trail);
         }
 

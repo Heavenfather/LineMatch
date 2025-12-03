@@ -27,7 +27,7 @@ namespace HotfixLogic
         private MatchData _matchData => (MatchData)Model;
         private MatchMainWindow _window => Module.GetActiveWindow(typeof(MatchMainWindow)) as MatchMainWindow;
 
-        private int[] _itemsId = new int[5] { 1110,1108 , 1107, 1111, 1109 };
+        private int[] _itemsId;
 
         Dictionary<int, int> _totalMatchCount = new Dictionary<int, int>();
         private int _squareMatchCount = 0;
@@ -44,7 +44,7 @@ namespace HotfixLogic
             Dispatcher.AddEventListener(GameEventDefine.OnMatchCloseClick, OnMatchClose, this);
             Dispatcher.AddEventListener(GameEventDefine.OnReduceMoveStep, OnReduceMoveStep, this);
             Dispatcher.AddEventListener(GameEventDefine.OnMatchCheckLastStep, OnMatchCheckLastStep, this);
-            Dispatcher.AddEventListener(GameEventDefine.OnMatchStepMoveEnd, OnMatchStepMoveEnd, this);
+            Dispatcher.AddEventListener<EventOneParam<int>>(GameEventDefine.OnMatchStepMoveEnd, OnMatchStepMoveEnd, this);
             Dispatcher.AddEventListener(GameEventDefine.OnMatchNoneMatchToFail, OnMatchNoneMatchToFail, this);
             Dispatcher.AddEventListener(GameEventDefine.OnMatchRestart, OnMatchRestart, this);
             Dispatcher.AddEventListener(GameEventDefine.OnMatchCancelItem, OnMatchCancelItem, this);
@@ -71,8 +71,21 @@ namespace HotfixLogic
             Dispatcher.AddEventListener(GameEventDefine.OnMatchFinish, OnMatchFinish, this);
             Dispatcher.AddEventListener(GameEventDefine.OnMatchUpdateResultCoin, UpdateResultCoin, this);
             Dispatcher.AddEventListener(GameEventDefine.OnMatchGuideLevelAllFinish, OnMatchGuideLevelAllFinish, this);
+            Dispatcher.AddEventListener<EventOneParam<int>>(GameEventDefine.OnMatchLinkSquareCount, OnMatchLinkSquareCount, this);
+            Dispatcher.AddEventListener<EventOneParam<Color>>(GameEventDefine.OnMatchUpdateLinkColor, OnMatchUpdateLinkColor, this);
 
             InitData();
+            if (_matchData.EnterLevelType == MatchLevelType.C || (_matchData.EnterLevelType == MatchLevelType.Editor &&
+                                                                  MatchManager.Instance.CurrentMatchGameType ==
+                                                                  MatchGameType.TowDots))
+            {
+                _itemsId = new int[] { 1108, 1107, 1111, 1130 };
+            }
+            else
+            {
+                _itemsId = new int[] { 1110,1108 , 1107, 1111, 1109 };
+            }
+
             await EnterMatch();
 
             CommonLoading.ShowLoading(LoadingEnum.Match, 1.0f, () => { 
@@ -137,6 +150,15 @@ namespace HotfixLogic
             int guideId = _matchData.GetGuideIdByGuideLevelId(step);
             GuideManager.Instance.SendLog(guideId, 3);
             _guideLevelAttemptCount = 0;
+        }
+
+        private void OnMatchLinkSquareCount(EventOneParam<int> obj)
+        {
+            _window.PlayRangeLineAnim(obj.Arg);
+        }
+
+        private void OnMatchUpdateLinkColor(EventOneParam<Color> param) {
+            _window.OnMatchUpdateLinkColor(param.Arg);
         }
 
         private void OnMatchGuideLevelAllFinish()
@@ -212,6 +234,7 @@ namespace HotfixLogic
                 if (result)
                 {
                     G.EventModule.DispatchEvent(GameEventDefine.OnMatchUseItemSuccess, obj);
+                    DifficultyStrategyManager.Instance.SetCurrentUseItemState(true);
                 }
                 else
                 {
@@ -229,8 +252,7 @@ namespace HotfixLogic
             {
                 var window = await Module.OpenChildWindow<MatchGMChangeBoard>();
                 LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
-                int id = Mathf.Max(1,
-                    db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel));
+                int id = db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel);
                 LevelMapImage config = db[id + 1];
                 if(string.IsNullOrEmpty(ElementSystem.MatchBgColor))
                     ElementSystem.MatchBgColor = config.matchBgColor;
@@ -350,10 +372,10 @@ namespace HotfixLogic
             }, 0.5f);
         }
 
-        private void OnMatchStepMoveEnd()
+        private void OnMatchStepMoveEnd(EventOneParam<int> arg)
         {
-            _lastStep = _matchData.MoveStep;
-            _matchData.ReduceMoveStep(_matchData.MoveStep);
+            _lastStep = arg.Arg;
+            _matchData.ReduceMoveStep(arg.Arg);
 
             //结算上报   上报放在这里有隐患，如果中途退出，数据会丢失 TODO....
             int starCount = MatchManager.Instance.CalStarCountByScore(MatchManager.Instance.TotalScore,
@@ -373,8 +395,6 @@ namespace HotfixLogic
             RequestGameEnd(true, starCount, coinCount);
 
             G.UIModule.ShowUIAsync<MatchResultWin>("", _matchData.CurrentLevelData, _lastStep, _firstPlay, coinCount);
-            
-            // Module.OpenChildWindow<MatchResultWin>(true, _matchData.CurrentLevelData, _lastStep, _firstPlay, coinCount).Forget();
         }
 
         private void UpdateResultCoin() {
@@ -447,7 +467,7 @@ namespace HotfixLogic
 
                 items = new List<ItemData>(10) { new ItemData("star", starCount) };
 
-                if (coinCount > 0) items.Add(new ItemData("coin`", coinCount));
+                if (coinCount > 0) items.Add(new ItemData("coin", coinCount));
                 if (IsCanAddUnlockReward(MatchManager.Instance.CurLevelID, out string rewardList))
                 {
                     if (!string.IsNullOrEmpty(rewardList))
@@ -515,7 +535,6 @@ namespace HotfixLogic
 
             _useStep++;
             _matchData.ReduceMoveStep(1);
-            _window.RefreshStep();
             
             G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepModify,
                 EventOneParam<int>.Create(_matchData.MoveStep));
@@ -573,7 +592,7 @@ namespace HotfixLogic
             }
             else if(matchType == MatchGameType.TowDots)
             {
-                await MatchBoot.BootStart(_matchData.CurrentLevelData, MatchServiceType.TowDots);
+                await MatchBoot.BootStart(_matchData.CurrentLevelData, MatchServiceType.TowDots, _window);
             }
             InitWindowState();
         }
@@ -601,7 +620,7 @@ namespace HotfixLogic
             var advStep = param.Arg1;
 
             _matchData.AddStep(advStep);
-            _window.RefreshStep();
+            
             G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepModify,
                 EventOneParam<int>.Create(_matchData.MoveStep));
         }
@@ -688,6 +707,7 @@ namespace HotfixLogic
             else if (matchType == MatchGameType.TowDots)
                 MatchBoot.BootExit();
             G.UIModule.SetSceneCamera(null);
+            DifficultyStrategyManager.Instance.SetCurrentUseItemState(false);
         }
 
         private void OnMatchFinish() {

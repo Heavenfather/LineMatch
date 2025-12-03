@@ -14,12 +14,7 @@ namespace Hotfix.Logic.GamePlay
         private MatchStateContext _matchContext;
 
         // 用于判断棋盘是否忙碌
-        private EcsFilter _busyFilter;
-        private EcsFilter _fallingFilter;
-        private EcsFilter _requestFilter;
-        private EcsFilter _actionFilter;
-        private EcsFilter _checkTagFilter;
-        private EcsFilter _destroyTagFilter;
+        private EcsFilter _boardSystemCheckFilter;
 
         // 状态标记，防止重复触发结算
         private bool _isResultTriggered = false;
@@ -35,12 +30,7 @@ namespace Hotfix.Logic.GamePlay
             _matchContext = _context.MatchStateContext;
 
             // 初始化过滤器
-            _busyFilter = _world.Filter<VisualBusyComponent>().End();
-            _fallingFilter = _world.Filter<FallAnimationComponent>().End();
-            _requestFilter = _world.Filter<MatchRequestComponent>().End();
-            _actionFilter = _world.Filter<PendingActionsComponent>().End();
-            _checkTagFilter = _world.Filter<BoardStableCheckTag>().End();
-            _destroyTagFilter = _world.Filter<DestroyElementTagComponent>().End();
+            _boardSystemCheckFilter = _world.Filter<BoardStableCheckSystemTag>().End();
         }
 
         public void Run(IEcsSystems systems)
@@ -70,12 +60,7 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         private bool IsGameIdle()
         {
-            return _busyFilter.GetEntitiesCount() == 0 && 
-                   _fallingFilter.GetEntitiesCount() == 0 && 
-                   _requestFilter.GetEntitiesCount() == 0 &&
-                   _actionFilter.GetEntitiesCount() == 0 &&
-                   _checkTagFilter.GetEntitiesCount() == 0 &&
-                   _destroyTagFilter.GetEntitiesCount() == 0;
+            return _boardSystemCheckFilter.GetEntitiesCount() > 0;
         }
         
         /// <summary>

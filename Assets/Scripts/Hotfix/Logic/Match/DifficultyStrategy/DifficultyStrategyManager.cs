@@ -6,6 +6,7 @@ using GameConfig;
 using GameCore.Singleton;
 using Hotfix.Define;
 using Hotfix.Utils;
+using HotfixCore.Module;
 using UnityEngine;
 using Logger = GameCore.Log.Logger;
 using Random = UnityEngine.Random;
@@ -64,22 +65,23 @@ namespace HotfixLogic.Match
         //记录每个分数变化的数据
         private Dictionary<string, float> _scoreChangedLogEventData = new Dictionary<string, float>();
 
-        private LevelData _curLevelData = null;
-
         private StringBuilder _sb = new StringBuilder();
 
         // 保存当前的触发上下文
         private DifficultyTriggerContext _lastContext;
 
-        private int _levelUsingItemLevel = 0;
+        private int _currentLevelId;
+        private bool _isCurrentLevelUseItem = false;
+        private StageDifficultySetting _stageDifficultySetting;
 
-        /// <summary>
-        /// 上次使用道具的关卡
-        /// </summary>
-        /// <param name="level"></param>
-        public void SetUsingItemValue(int level)
+        public void SetDifficultySetting(StageDifficultySetting setting)
         {
-            _levelUsingItemLevel = level;
+            _stageDifficultySetting = setting;
+        }
+
+        public void SetCurrentUseItemState(bool isUseItem)
+        {
+            _isCurrentLevelUseItem = isUseItem;
         }
 
         public DifficultyTriggerContext CreateContext(in LevelData currentLevel, int remainSteps)
@@ -92,7 +94,7 @@ namespace HotfixLogic.Match
                 ConsecutiveFailures = currentLevel.id == MatchManager.Instance.MaxLevel
                     ? LevelManager.Instance.StagePlayCount
                     : 0,
-                ReturnUserDays = 0 // TODO: 待接入正式数据
+                ReturnUserDays = G.UserInfoModule.LoginIntervalDays,
             };
             return context;
         }
@@ -107,13 +109,9 @@ namespace HotfixLogic.Match
             if (levelType != MatchLevelType.C && levelType != MatchLevelType.Editor)
                 return;
             _lastContext = context;
-            float oldControlValue = 0;
+            _currentLevelId = context.LevelId;
+            float oldControlValue = _totalControlValue;
             Dictionary<string, float> oldScoreData = new Dictionary<string, float>(_scoreChangedLogEventData);
-            foreach (var item in oldScoreData)
-            {
-                oldControlValue += item.Value;
-            }
-
             ResetDifficulty();
 
             // 1. 计算总调控值
@@ -124,10 +122,12 @@ namespace HotfixLogic.Match
             {
                 if (oldScoreData.ContainsKey(item.Key))
                 {
-                    if (!Mathf.Approximately(oldScoreData[item.Key], item.Value))
-                    {
+                    if(item.Value > oldScoreData[item.Key])
                         changedValue.Add(item.Key, item.Value - oldScoreData[item.Key]);
-                    }
+                }
+                else
+                {
+                    changedValue.Add(item.Key, item.Value);
                 }
             }
 
@@ -137,8 +137,7 @@ namespace HotfixLogic.Match
                 controlValue += value;
             _totalControlValue = controlValue;
 
-            if (oldControlValue != 0)
-                LogValueChangeEvent(_totalControlValue - oldControlValue, _totalControlValue, changedValue);
+            LogValueChangeEvent(_totalControlValue - oldControlValue, _totalControlValue, changedValue);
 
 
             // 2. 根据调控值抽取策略
@@ -153,7 +152,7 @@ namespace HotfixLogic.Match
             _sb.Clear();
             foreach (var item in data)
             {
-                _sb.Append($"{item.Key}={item.Value}");
+                _sb.Append($"{item.Key}={item.Value} ");
             }
 
             Dictionary<string, object> eventData = new Dictionary<string, object>();
@@ -161,6 +160,7 @@ namespace HotfixLogic.Match
             eventData.Add("change_value", changeValue.ToString("F"));
             eventData.Add("final_value", finalValue);
             eventData.Add("change_source", _sb.ToString());
+            eventData.Add("level_id", _currentLevelId);
             CommonUtil.LogEvent(LogEventKeyDefine.DifficultyStrategyValueChange, eventData);
         }
 
@@ -187,15 +187,16 @@ namespace HotfixLogic.Match
             }
 
             string finalContent = _sb.ToString();
-            if (string.IsNullOrEmpty(finalContent)) finalContent = "None";
-
-            var reportData = new Dictionary<string, object>
+            if (!string.IsNullOrEmpty(finalContent))
             {
-                { "event_time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
-                { "current_control_val", _totalControlValue }, // 此时调控值
-                { "content", finalContent } // 生效/失效内容
-            };
-            CommonUtil.LogEvent(LogEventKeyDefine.DifficultyStrategyEnableChange, reportData);
+                var reportData = new Dictionary<string, object>
+                {
+                    { "event_time", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
+                    { "current_control_val", _totalControlValue }, // 此时调控值
+                    { "content", finalContent } // 生效/失效内容
+                };
+                CommonUtil.LogEvent(LogEventKeyDefine.DifficultyStrategyEnableChange, reportData);
+            }
         }
 
         /// <summary>
@@ -247,7 +248,15 @@ namespace HotfixLogic.Match
             }
 
             // --- 关内使用道具 ---
-            int useItemLevel = Mathf.Max(0, MatchManager.Instance.MaxLevel - _levelUsingItemLevel);
+            int useItemLevel = 0;
+            if (_isCurrentLevelUseItem)
+            {
+                useItemLevel = 0;
+            }
+            else
+            {
+                useItemLevel = Mathf.Max(0, MatchManager.Instance.MaxLevel - _stageDifficultySetting.now_stage_id);
+            }
             AddScore("useItem", db.GetUseItemControlValue(useItemLevel));
 
             // --- 单关失败次数 ---

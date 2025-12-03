@@ -134,8 +134,8 @@ namespace HotfixLogic.Match
                 maxY = Mathf.Max(maxY, coord.y);
             }
 
-            MatchGameType matchGameType = MatchManager.Instance.CurrentMatchGameType;
-            if (matchGameType == MatchGameType.TowDots)
+            MatchLevelType levelType = MatchManager.Instance.CurrentMatchLevelType;
+            if (levelType == MatchLevelType.C)
             {
                 var enclosedItems = GetEnclosedGridItems(context,closedLoop, minY, maxY);
                 if (enclosedItems is { Count: > 0 })

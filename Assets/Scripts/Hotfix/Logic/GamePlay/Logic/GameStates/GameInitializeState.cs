@@ -97,6 +97,10 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new DropElementSpawnSystem()) //掉落元素生成
                 .Add(new DropElementAnimationSystem()) //掉落元素动画
                 .Add(new PostDropActionSystem()) // 处理掉落渲染处理
+                
+                
+                .Add(new ShuffleSystem()) // 洗牌检测
+                .Add(new ShuffleAnimationSystem())
                 .Add(new GameResultCheckSystem())
                 .Add(new GameSettlementSystem())
                 ;

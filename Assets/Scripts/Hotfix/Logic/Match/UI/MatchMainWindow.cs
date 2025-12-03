@@ -204,6 +204,10 @@ namespace HotfixLogic
 
         private int _targetCoinCount;
 
+        private Vector2 _lineSize;
+        private Tween _lineTween;
+        private List<Image> _linkRangeImg = new List<Image>();
+
         public override void OnCreate()
         {
             _elementDB = ConfigMemoryPool.Get<ElementMapDB>();
@@ -246,6 +250,36 @@ namespace HotfixLogic
             }
 
             go_beginTarget.SetActive(false);
+
+            InitLine();
+        }
+
+        private void InitLine() {
+            var hRectTransform = go_hLine.GetComponent<RectTransform>();
+
+            var rect = hRectTransform.rect;
+            _lineSize = new Vector2(rect.width, rect.height);
+
+            hRectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            hRectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            hRectTransform.sizeDelta = new Vector2(0, _lineSize.y);
+
+            var vRectTransform1 = go_vLine1.GetComponent<RectTransform>();
+            vRectTransform1.anchorMax = new Vector2(0.5f, 0);
+            vRectTransform1.anchorMin = new Vector2(0.5f, 0);
+            vRectTransform1.sizeDelta = new Vector2(_lineSize.x, 0);
+
+            var vRectTransform2 = go_vLine2.GetComponent<RectTransform>();
+            vRectTransform2.anchorMax = new Vector2(0.5f, 1);
+            vRectTransform2.anchorMin = new Vector2(0.5f, 1);
+            vRectTransform2.sizeDelta = new Vector2(_lineSize.x, 0);
+
+            _linkRangeImg.Add(img_line1);
+            _linkRangeImg.Add(img_line2);
+            _linkRangeImg.Add(img_line3);
+            _linkRangeImg.Add(img_line4);
+            _linkRangeImg.Add(img_line5);
+            _linkRangeImg.Add(img_line6);
         }
 
         public override void AddListeners()
@@ -269,6 +303,7 @@ namespace HotfixLogic
             AddListeners<EventOneParam<int>>(GameEventDefine.OnExchangeCoinShopSucc, OnExchangeCoinShopSucc);
             AddListeners(GameEventDefine.OnMatchAddResultCoin, OnMatchAddResultCoin, this);
             AddListeners<EventTwoParam<int, float>>(GameEventDefine.OnMatchSetResultCoin, OnMatchSetResultCoin, this);
+            AddListeners<EventOneParam<int>>(GameEventDefine.OnMatchStepModify, OnMatchStepModify, this);
             
             // AddListeners<EventOneParam<int>>(GameEventDefine.OnMatchCollectItemFlyComplete,
             //     OnMatchCollectItemFlyComplete, this);
@@ -276,8 +311,14 @@ namespace HotfixLogic
             AddListeners<EventOneParam<bool>>(GameEventDefine.OnMatchShowLastStepPrompt, OnMatchShowLastStepPrompt, this);
 
             AddListeners(GameEventDefine.OnMatchBeginCollectResultCoin, OnMatchBeginCollectResultCoin, this);
+            AddListeners(GameEventDefine.OnMatchTouchEnd, HideLinkLine, this);
         }
-            
+
+        private void OnMatchStepModify(EventOneParam<int> obj)
+        {
+            RefreshStep(obj.Arg);
+        }
+
 
         private void OnMatchSquareLineStep(EventOneParam<int> obj)
         {
@@ -443,7 +484,7 @@ namespace HotfixLogic
             _data = data;
             InitStarScore();
             CreateTarget();
-            RefreshStep();
+            RefreshStep(data.MoveStep);
 
             SetLeftText();
         }
@@ -478,7 +519,7 @@ namespace HotfixLogic
             _isCalculateCoinState = false;
             PlaySpine(MatchConst.SPINE_IDLE);
             InitStarScore();
-            RefreshStep();
+            RefreshStep(_data.MoveStep);
             ResetItem();
 
             ResetReportData();
@@ -502,7 +543,7 @@ namespace HotfixLogic
         public void ShowUseItemTips(int itemId)
         {
             LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
-            int id = Mathf.Max(1, db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel));
+            int id = db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel);
             LevelMapImage config = db[id + 1];
 
             var textColor = Color.white;
@@ -739,11 +780,11 @@ namespace HotfixLogic
             AudioUtil.PlaySound("audio/match/collect_star");
         }
 
-        public void RefreshStep()
+        private void RefreshStep(int remainStep)
         {
-            text_step.text = _data.MoveStep > 0 ? _data.MoveStep.ToString() : "0";
+            text_step.text = remainStep > 0 ? remainStep.ToString() : "0";
 
-            if (_data.MoveStep <= 5 && _data.MoveStep > 0)
+            if (remainStep <= 5 && remainStep > 0)
             {
                 text_step.color = _warningTextColor;
                 if (!go_stepEff.activeSelf)
@@ -757,7 +798,7 @@ namespace HotfixLogic
                 go_stepEff.gameObject.SetActive(false);
             }
 
-            if (_data.MoveStep == 5 || _data.MoveStep == 2) {
+            if (remainStep == 5 || remainStep == 2) {
                 PlaySpine(MatchConst.SPINE_WARM);
                     AudioUtil.PlaySound("audio/common/com_11");
             }
@@ -896,7 +937,7 @@ namespace HotfixLogic
             text_left.text = LocalizationPool.Get("Common/Reward");
         }
 
-        public Vector2 GetCoinScreenPosition()
+        public Vector3 GetCoinScreenPosition()
         {
             var screenPos = G.UIModule.GetUIScreenPos(go_coinCell.transform.position);
             return screenPos;
@@ -1231,9 +1272,110 @@ namespace HotfixLogic
                     
                 }
             });
+        }
+
+        public void HideLinkLine() {
+            _lineTween?.Kill();
+
+            var hRectTransform = go_hLine.transform as RectTransform;
+            var vRectTransform1 = go_vLine1.transform as RectTransform;
+            var vRectTransform2 = go_vLine2.transform as RectTransform;
+
+            hRectTransform.sizeDelta = new Vector2(0, _lineSize.y);
+            vRectTransform1.sizeDelta = new Vector2(_lineSize.x, 0);
+            vRectTransform2.sizeDelta = new Vector2(_lineSize.x, 0);
+        }
+
+        public void OnMatchUpdateLinkColor(Color linkColor) {
+            foreach (var img in _linkRangeImg) {
+                img.color = linkColor;
+            }
+        }
+
+        public void PlayRangeLineAnim(int linkCount) {
+            // if (linkCount < 1) return;
+            var duration = 0.3f;
+            
+            var hRectTransform = go_hLine.transform as RectTransform;
+            int curCount = (int)(hRectTransform.sizeDelta.x / (_lineSize.x / 6));
 
 
+            var vRectTransform1 = go_vLine1.transform as RectTransform;
+            var vRectTransform2 = go_vLine2.transform as RectTransform;
 
+            if (vRectTransform1.sizeDelta.y > 0) {
+                curCount += (int)(vRectTransform1.sizeDelta.y / (_lineSize.y / 2 / 6));
+            }
+
+            _lineTween?.Kill();
+            var horizontalSize = 0f;
+            var horizontalTime = 0f;
+            var verticalSize = 0f;
+            var verticalTime = 0f;
+
+
+            var seq = DOTween.Sequence();
+            if (linkCount <= 6 && curCount < 6) {
+                horizontalSize = _lineSize.x / 6 * linkCount;
+                horizontalTime = duration;
+            } else if (linkCount >= 6 && curCount >= 6) {
+                verticalSize = _lineSize.y / 2 / 6 * (linkCount - 6);
+                verticalTime = duration;
+            } else {
+
+                // 水平方向变化的单位
+                int hChangeCount = 0;
+                // 垂直方向变化单位
+                int vChangeCount = 0;
+
+                if (linkCount > 6) {
+                    hChangeCount = 6 - curCount;
+                    vChangeCount = linkCount - 6;
+
+                    horizontalSize = _lineSize.x;
+                    verticalSize = _lineSize.y / 2 / 6 * (linkCount - 6);
+
+                } else {
+                    hChangeCount = 6 - linkCount;
+                    vChangeCount = curCount - 6;
+
+                    horizontalSize = _lineSize.x / 6 * linkCount;
+                    verticalSize = 0;
+                }
+
+                // 走到这里，时间不可能为0
+                horizontalTime = Math.Max(0.01f, (float)hChangeCount / (hChangeCount + vChangeCount) * duration);
+                verticalTime = Math.Max(0.01f, (float)vChangeCount / (hChangeCount + vChangeCount) * duration);
+            }
+
+            if (curCount >= 6) {
+                // 先变化竖向的
+                if (verticalTime > 0) {
+                    seq.Append(vRectTransform1.DOSizeDelta(new Vector2(_lineSize.x, verticalSize), verticalTime));
+                    seq.Join(vRectTransform2.DOSizeDelta(new Vector2(_lineSize.x, verticalSize), verticalTime));
+                }
+
+                // 再变化水平方向
+                if (horizontalTime > 0) {
+                    seq.Append(hRectTransform.DOSizeDelta(new Vector2(horizontalSize, _lineSize.y), horizontalTime));
+                }
+            } else {
+                // 再变化水平方向
+                if (horizontalTime > 0) {
+                    seq.Append(hRectTransform.DOSizeDelta(new Vector2(horizontalSize, _lineSize.y), horizontalTime));
+                }
+
+                // 再变化竖向的
+                if (verticalTime > 0) {
+                    seq.Append(vRectTransform1.DOSizeDelta(new Vector2(_lineSize.x, verticalSize), verticalTime));
+                    seq.Join(vRectTransform2.DOSizeDelta(new Vector2(_lineSize.x, verticalSize), verticalTime));
+                }
+            }
+            seq.AppendCallback(() => {
+                _lineTween = null;
+            });
+
+            _lineTween = seq;
         }
     }
 }

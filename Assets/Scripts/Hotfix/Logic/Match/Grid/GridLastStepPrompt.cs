@@ -31,7 +31,7 @@ public class GridLastStepPrompt : MonoBehaviour
 
     private void Awake() {
         LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
-        int id = Mathf.Max(1, db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel));
+        int id = db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel);
         LevelMapImage config = db[id + 1];
 
         _effLine = _effCoolLine;

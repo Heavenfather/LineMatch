@@ -329,6 +329,7 @@ namespace HotfixLogic.Match
             other.difficulty = this.difficulty;
             other.fullScore = this.fullScore;
             other.stepLimit = this.stepLimit;
+            other.referenceId = this.referenceId;
 
             other.initColor = (int[])this.initColor?.Clone();
             other.initColorRate = (int[])this.initColorRate?.Clone();
@@ -405,6 +406,19 @@ namespace HotfixLogic.Match
             else
             {
                 other.grid = null;
+            }
+
+            if (this.dropFlags != null)
+            {
+                other.dropFlags = new List<DropFlag>(this.dropFlags.Count);
+                for (int i = 0; i < this.dropFlags.Count; i++)
+                {
+                    other.dropFlags.Add(new DropFlag()
+                    {
+                        dropX = this.dropFlags[i].dropX,
+                        dropElements = new List<DropFlagElement>(this.dropFlags[i].dropElements),
+                    });
+                }
             }
         }
 

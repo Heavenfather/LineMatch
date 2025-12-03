@@ -10,5 +10,6 @@
         Transform, // 变化下一个状态
         AddScore, // 加分
         Delay,// 延迟
+        Shuffle, // 洗牌
     }
 }

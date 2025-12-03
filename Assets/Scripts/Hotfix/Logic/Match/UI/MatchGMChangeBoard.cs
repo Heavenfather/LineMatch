@@ -64,16 +64,16 @@ namespace HotfixLogic
         {
             //还原回配置的色值
             LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
-            int id = Mathf.Max(1, db.GetLevelInPage(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel));
-            LevelMapImage config = db[id + 1];
-            input_bgColor.text = config.matchBgColor;
-            input_green.text = config.lineColorMap[1];
-            input_blue.text = config.lineColorMap[2];
-            input_yellow.text = config.lineColorMap[3];
-            input_red.text = config.lineColorMap[4];
-            input_purple.text = config.lineColorMap[5];
-            input_orange.text = config.lineColorMap[6];
-            input_cycan.text = config.lineColorMap[7];
+            input_bgColor.text = db.GetMatchBgColor(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel);
+
+            var lineColorMap = db.GetLineColors(MatchManager.Instance.CurLevelID, MatchManager.Instance.MaxLevel);
+            input_green.text = lineColorMap[1];
+            input_blue.text = lineColorMap[2];
+            input_yellow.text = lineColorMap[3];
+            input_red.text = lineColorMap[4];
+            input_purple.text = lineColorMap[5];
+            input_orange.text = lineColorMap[6];
+            input_cycan.text = lineColorMap[7];
         }
 
         private bool Valid(out BoardColorStruck data)

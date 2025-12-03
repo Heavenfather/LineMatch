@@ -130,6 +130,12 @@ namespace Hotfix.Logic.GamePlay
                         go.transform.localPosition = Vector3.zero;
                     });
                     break;
+                case ElementScaleState.Change:
+                    go.transform.DOShakePosition(0.2f, 0.05f).OnKill(() =>
+                    {
+                        go.transform.localPosition = Vector3.zero;
+                    }).SetAutoKill();
+                    break;
             }
         }
 

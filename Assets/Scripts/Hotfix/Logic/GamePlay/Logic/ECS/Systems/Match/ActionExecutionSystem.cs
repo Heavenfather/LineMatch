@@ -202,7 +202,21 @@ namespace Hotfix.Logic.GamePlay
                 case MatchActionType.Spawn2Other:
                     ExecuteSpawn2Other(action);
                     break;
+                case MatchActionType.Shuffle:
+                    ExecuteShuffle(action);
+                    break;
             }
+        }
+
+        /// <summary>
+        /// 执行洗牌
+        /// </summary>
+        private void ExecuteShuffle(AtomicAction action)
+        {
+            // 创建洗牌请求实体
+            int requestEntity = _world.NewEntity();
+            var shufflePool = _world.GetPool<ShuffleRequestComponent>();
+            ref var request = ref shufflePool.Add(requestEntity);
         }
 
 

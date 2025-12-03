@@ -253,6 +253,141 @@ namespace Hotfix.Logic.GamePlay
             return true;
         }
 
+        public bool HasPotentialMatch(EcsWorld world, List<ShuffleSystem.ShuffleNode> shuffleNodes)
+        {
+            if (shuffleNodes == null || shuffleNodes.Count == 0)
+                return false;
+
+            var starBombPool = world.GetPool<StarBombComponent>();
+            var searchDotPool = world.GetPool<SearchDotComponent>();
+
+            for (int i = 0; i < shuffleNodes.Count; i++)
+            {
+                var node = shuffleNodes[i];
+
+                // 1. 检查StarBomb（星爆点）
+                if (node.Type == ElementType.StarBomb)
+                {
+                    if (starBombPool.Has(node.EntityId))
+                    {
+                        ref var starBomb = ref starBombPool.Get(node.EntityId);
+                        int targetConfigId = starBomb.StarDotBaseElementId;
+
+                        // 检查四个方向是否有匹配的棋子
+                        if (HasMatchingNeighbor(shuffleNodes, node.CurrentPos, targetConfigId,
+                                ElementType.Normal, ElementType.SearchDot))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                // 2. 检查SearchDot（搜寻点）
+                else if (node.Type == ElementType.SearchDot)
+                {
+                    if (searchDotPool.Has(node.EntityId))
+                    {
+                        ref var searchDot = ref searchDotPool.Get(node.EntityId);
+                        int targetConfigId = searchDot.SearchDotBaseElementId;
+
+                        // 检查四个方向是否有匹配的棋子
+                        if (HasMatchingNeighbor(shuffleNodes, node.CurrentPos, targetConfigId,
+                                ElementType.Normal, ElementType.SearchDot))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                // 3. 检查白色点（HorizontalDot/TowDotsBombDot/TowDotsColoredDot）
+                else if (node.Type == ElementType.HorizontalDot ||
+                         node.Type == ElementType.TowDotsBombDot ||
+                         node.Type == ElementType.TowDotsColoredDot)
+                {
+                    // 检查四个方向是否有Normal棋子
+                    if (HasNormalNeighbor(shuffleNodes, node.CurrentPos))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // 其余情况返回false
+            return false;
+        }
+
+        /// <summary>
+        /// 检查指定位置的四个方向是否有匹配的棋子
+        /// </summary>
+        private bool HasMatchingNeighbor(List<ShuffleSystem.ShuffleNode> shuffleNodes, Vector2Int pos,
+            int targetConfigId, params ElementType[] allowedTypes)
+        {
+            Vector2Int[] directions = new Vector2Int[]
+            {
+                new Vector2Int(pos.x + 1, pos.y), // 右
+                new Vector2Int(pos.x - 1, pos.y), // 左
+                new Vector2Int(pos.x, pos.y + 1), // 上
+                new Vector2Int(pos.x, pos.y - 1)  // 下
+            };
+
+            foreach (var dir in directions)
+            {
+                for (int i = 0; i < shuffleNodes.Count; i++)
+                {
+                    var neighbor = shuffleNodes[i];
+                    if (neighbor.CurrentPos == dir)
+                    {
+                        // 检查类型是否匹配
+                        bool typeMatches = false;
+                        foreach (var allowedType in allowedTypes)
+                        {
+                            if (neighbor.Type == allowedType)
+                            {
+                                typeMatches = true;
+                                break;
+                            }
+                        }
+
+                        if (!typeMatches) continue;
+
+                        // 检查ConfigId是否匹配
+                        if (neighbor.ConfigId == targetConfigId)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 检查指定位置的四个方向是否有Normal棋子
+        /// </summary>
+        private bool HasNormalNeighbor(List<ShuffleSystem.ShuffleNode> shuffleNodes, Vector2Int pos)
+        {
+            Vector2Int[] directions = new Vector2Int[]
+            {
+                new Vector2Int(pos.x + 1, pos.y), // 右
+                new Vector2Int(pos.x - 1, pos.y), // 左
+                new Vector2Int(pos.x, pos.y + 1), // 上
+                new Vector2Int(pos.x, pos.y - 1)  // 下
+            };
+
+            foreach (var dir in directions)
+            {
+                for (int i = 0; i < shuffleNodes.Count; i++)
+                {
+                    var neighbor = shuffleNodes[i];
+                    if (neighbor.CurrentPos == dir && neighbor.Type == ElementType.Normal)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private List<GenItemData> GetGenItems(MatchRuleContext context, List<Vector2Int> closedLoop)
         {
             int minY = closedLoop[0].y;

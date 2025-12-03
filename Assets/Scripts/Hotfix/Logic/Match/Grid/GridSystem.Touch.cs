@@ -144,6 +144,7 @@ namespace HotfixLogic.Match
                     {
                         _rectangleFlag = false;
                         LineController.Instance.RemoveUnderPoint();
+                        UpdateLinkLink();
                     }
                     else
                     {
@@ -185,6 +186,8 @@ namespace HotfixLogic.Match
                                     {
                                         CommonUtil.DeviceVibration(_vibrationForce + 1, 0.1f); //形成方格，震动强度提高一档
                                         PlaySquareAudio();
+
+                                        G.EventModule.DispatchEvent(GameEventDefine.OnMatchLinkSquareCount, EventOneParam<int>.Create(12));
                                     }
 
                                     _rectangleFlag = true;
@@ -239,8 +242,7 @@ namespace HotfixLogic.Match
                         _currentSelectedGrid.DoDeselect();
                         LineController.Instance.RemoveUnderPoint();
 
-                        _selectedGrids.Remove(_currentSelectedGrid);
-                        PlayLinkAudio();
+                        RemoveSelectGrids(_currentSelectedGrid);
                         LineController.Instance.SetOverLinePoint(1, _selectedGrids[^1].GetPosition());
                         _currentSelectedGrid = currentTouchGrid;
                     }
@@ -286,6 +288,32 @@ namespace HotfixLogic.Match
         {
             _selectedGrids.Add(gridItem);
             PlayLinkAudio();
+
+            UpdateLinkLink();
+        }
+
+        private void RemoveSelectGrids(GridItem gridItem)
+        {
+            _selectedGrids.Remove(gridItem);
+            PlayLinkAudio();
+
+            UpdateLinkLink();
+        }
+
+        private void UpdateLinkLink() {
+            if (_selectedGrids.Count <= 0) return;
+
+            var element = _selectedGrids[0].DoSelect();
+            if (element == null || element.Data.ElementType != ElementType.Normal) return;
+
+            if (_selectedGrids.Count == 1) {
+                var lineColor = ElementSystem.Instance.GetElementColor(element.Data.ConfigId);
+                var param = EventOneParam<Color>.Create(lineColor);
+                G.EventModule.DispatchEvent(GameEventDefine.OnMatchUpdateLinkColor, param);
+            }
+
+            G.EventModule.DispatchEvent(GameEventDefine.OnMatchLinkSquareCount, 
+                EventOneParam<int>.Create(_selectedGrids.Count - 1));
         }
 
         private void PlayLinkAudio() {
@@ -300,6 +328,8 @@ namespace HotfixLogic.Match
 
         private void OnTouchEnd()
         {
+            G.EventModule.DispatchEvent(GameEventDefine.OnMatchTouchEnd);
+
             StopOrResumeTipsTimer(false);
             _currentSelectedGrid = null;
             if (_selectedGrids == null) return;

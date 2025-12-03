@@ -314,6 +314,66 @@ namespace Hotfix.Logic.GamePlay
             return true;
         }
 
+        public bool HasPotentialMatch(EcsWorld world,List<ShuffleSystem.ShuffleNode> shuffleNodes)
+        {
+            if (shuffleNodes == null || shuffleNodes.Count == 0)
+                return false;
+
+            // 1. 检查是否存在单个的功能棋子
+            for (int i = 0; i < shuffleNodes.Count; i++)
+            {
+                var node = shuffleNodes[i];
+                if (node.Type == ElementType.Rocket ||
+                    node.Type == ElementType.RocketHorizontal ||
+                    node.Type == ElementType.Bomb)
+                {
+                    return true; // 存在可单独触发的功能棋子
+                }
+            }
+
+            // 2. 检查彩球是否有相邻的可连接棋子
+            for (int i = 0; i < shuffleNodes.Count; i++)
+            {
+                var node = shuffleNodes[i];
+                if (node.Type == ElementType.ColorBall)
+                {
+                    // 检查彩球的四个方向是否有可连接的棋子
+                    Vector2Int[] directions =
+                    {
+                        new (node.CurrentPos.x + 1, node.CurrentPos.y), // 右
+                        new (node.CurrentPos.x - 1, node.CurrentPos.y), // 左
+                        new (node.CurrentPos.x, node.CurrentPos.y + 1), // 上
+                        new (node.CurrentPos.x, node.CurrentPos.y - 1)  // 下
+                    };
+
+                    foreach (var dir in directions)
+                    {
+                        // 在shuffleNodes中查找相邻位置的棋子
+                        for (int j = 0; j < shuffleNodes.Count; j++)
+                        {
+                            if (i == j) continue; // 跳过自己
+
+                            var neighbor = shuffleNodes[j];
+                            if (neighbor.CurrentPos == dir)
+                            {
+                                // 检查是否是可连接的类型
+                                if (neighbor.Type == ElementType.Normal ||
+                                    neighbor.Type == ElementType.Rocket ||
+                                    neighbor.Type == ElementType.RocketHorizontal ||
+                                    neighbor.Type == ElementType.Bomb)
+                                {
+                                    return true; // 彩球有相邻的可连接棋子
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. 其余情况返回false
+            return false;
+        }
+
         private GenItemData GenElementData(List<Vector2Int> closedLoop, out bool result, out OneTakeScoreType scoreType)
         {
             result = true;

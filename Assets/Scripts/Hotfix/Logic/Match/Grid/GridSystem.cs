@@ -342,7 +342,7 @@ namespace HotfixLogic.Match
             ValidateManager.Instance.JudgeAllSpecialElements(ref delCoords);
             if (delCoords.Count <= 0)
             {
-                G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepMoveEnd);
+                G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepMoveEnd,EventOneParam<int>.Create(remainStep));
                 G.UIModule.ScreenLock(MatchConst.MatchDoneLockReason, false);
                 return;
             }
@@ -371,7 +371,7 @@ namespace HotfixLogic.Match
 
             await UniTask.Delay(TimeSpan.FromSeconds(0.7f)); //进度条
             
-            G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepMoveEnd);
+            G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepMoveEnd,EventOneParam<int>.Create(remainStep));
             G.UIModule.ScreenLock(MatchConst.MatchDoneLockReason, false);
         }
 
@@ -558,9 +558,7 @@ namespace HotfixLogic.Match
                 _guideLevelItemBg.SetVisible(false);
                 SpriteRenderer bgSp = background2DScaler.gameObject.GetComponent<SpriteRenderer>();
                 LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
-                int id = db.GetLevelInPage(levelData.id, levelData.id) + 1;
-                LevelMapImage levelMapConfig = db[id];
-                ColorUtility.TryParseHtmlString(levelMapConfig.matchBgColor, out Color bgColor);
+                ColorUtility.TryParseHtmlString(db.GetMatchBgColor(levelData.id, levelData.id), out Color bgColor);
                 bgSp.color = bgColor;
             }
             else

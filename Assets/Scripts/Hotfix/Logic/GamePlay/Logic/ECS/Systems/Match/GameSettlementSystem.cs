@@ -23,15 +23,9 @@ namespace Hotfix.Logic.GamePlay
         private IBoard _board;
         private IMatchService _matchService;
         private Camera _mainCamera;
-
-
+        
         // 用于判断棋盘是否忙碌
-        private EcsFilter _busyFilter;
-        private EcsFilter _fallingFilter;
-        private EcsFilter _requestFilter;
-        private EcsFilter _actionFilter;
-        private EcsFilter _checkTagFilter;
-        private EcsFilter _destroyTagFilter;
+        private EcsFilter _boardSystemCheckFilter;
         
         private EcsFilter _settlementFilter;
         private EcsPool<GameSettlementComponent> _settlementPool;
@@ -68,12 +62,8 @@ namespace Hotfix.Logic.GamePlay
             _gridCellPool = _world.GetPool<GridCellComponent>();
             _pendingActionsPool = _world.GetPool<PendingActionsComponent>();
             
-            _busyFilter = _world.Filter<VisualBusyComponent>().End();
-            _fallingFilter = _world.Filter<FallAnimationComponent>().End();
-            _requestFilter = _world.Filter<MatchRequestComponent>().End();
-            _actionFilter = _world.Filter<PendingActionsComponent>().End();
-            _checkTagFilter = _world.Filter<BoardStableCheckTag>().End();
-            _destroyTagFilter = _world.Filter<DestroyElementTagComponent>().End();
+            // 初始化过滤器
+            _boardSystemCheckFilter = _world.Filter<BoardStableCheckSystemTag>().End();
         }
 
         public void Run(IEcsSystems systems)
@@ -161,14 +151,14 @@ namespace Hotfix.Logic.GamePlay
             G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepMoveEnd,EventOneParam<int>.Create(remainStep));
         }
 
+        
+        /// <summary>
+        /// 检查游戏是否处于空闲状态
+        /// 只有当所有系统都"沉默"了，才是真正的回合结束
+        /// </summary>
         private bool IsGameIdle()
         {
-            return _busyFilter.GetEntitiesCount() == 0 && 
-                   _fallingFilter.GetEntitiesCount() == 0 && 
-                   _requestFilter.GetEntitiesCount() == 0 &&
-                   _actionFilter.GetEntitiesCount() == 0 &&
-                   _checkTagFilter.GetEntitiesCount() == 0 &&
-                   _destroyTagFilter.GetEntitiesCount() == 0;
+            return _boardSystemCheckFilter.GetEntitiesCount() > 0;
         }
         
         private void OnStepComplete(int index)

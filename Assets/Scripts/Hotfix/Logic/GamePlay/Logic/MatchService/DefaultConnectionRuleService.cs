@@ -15,6 +15,8 @@ namespace Hotfix.Logic.GamePlay
 
             // 2. 必须可交互 (不是正在消除中、不是不可选的障碍物)
             if (!ele.IsMatchable && !ele.IsMovable) return false;
+            var busyPool = world.GetPool<VisualBusyComponent>();
+            if (busyPool.Has(entity)) return false;
             
             // 3. 棋子在逻辑上必须还可以交互
             var statePool = world.GetPool<ElementComponent>();

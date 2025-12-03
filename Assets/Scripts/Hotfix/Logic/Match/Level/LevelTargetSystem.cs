@@ -16,23 +16,23 @@ namespace HotfixLogic.Match
         private Dictionary<int, int> _targetElements;
 
         private Dictionary<int, int> _originalTargets;
-        
+
         public Dictionary<int, int> TargetElements => _targetElements;
 
         public Dictionary<int, int> TempTargetElements;
 
         private Dictionary<int, int> _randomPopElementCounting;
-        
+
         /// <summary>
         /// 初始化关卡目标
         /// </summary>
-        public void ResetLevelTarget(LevelData levelData,bool notifyWindow = false)
+        public void ResetLevelTarget(LevelData levelData, bool notifyWindow = false)
         {
             _targetElements ??= new Dictionary<int, int>();
             _targetElements.Clear();
             _randomPopElementCounting ??= new Dictionary<int, int>();
             _randomPopElementCounting.Clear();
-            
+
             for (int i = 0; i < levelData.target.Length; i++)
             {
                 if (_targetElements.ContainsKey(levelData.target[i].targetId))
@@ -117,6 +117,7 @@ namespace HotfixLogic.Match
             {
                 return false;
             }
+
             if (TryGetTargetByOtherEvolution(targetId, out var id))
             {
                 if (_targetElements.TryGetValue(id, out var num))
@@ -124,6 +125,7 @@ namespace HotfixLogic.Match
                     return _targetElements[targetId] <= 0 && num <= 0;
                 }
             }
+
             return _targetElements.ContainsKey(targetId) && _targetElements[targetId] <= 0;
         }
 
@@ -164,7 +166,7 @@ namespace HotfixLogic.Match
             {
                 ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
                 int checkTargetId = -1;
-                if(_originalTargets.ContainsKey(randomElementId))
+                if (_originalTargets.ContainsKey(randomElementId))
                     checkTargetId = randomElementId;
                 else
                 {
@@ -197,12 +199,12 @@ namespace HotfixLogic.Match
                 TempTargetElements[kp.Key] = kp.Value;
             }
         }
-        
+
         /// <summary>
         /// 目标是否由同是目标的其它元素演变而成的
         /// </summary>
         /// <returns></returns>
-        private bool TryGetTargetByOtherEvolution(int elementId,out int evolutionId)
+        private bool TryGetTargetByOtherEvolution(int elementId, out int evolutionId)
         {
             evolutionId = -1;
             if (_targetElements == null)
@@ -211,15 +213,15 @@ namespace HotfixLogic.Match
             ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
             if (db.IsCircleElement(elementId))
                 return false;
-            
+
             if (!_targetElements.ContainsKey(elementId))
                 return false;
-            
+
             foreach (var targetId in _targetElements.Keys)
             {
-                if(elementId == targetId)
+                if (elementId == targetId)
                     continue;
-                
+
                 List<int> nextIds = new();
                 db.RefElementNextList(targetId, ref nextIds);
                 if (nextIds.Count > 0)
@@ -231,6 +233,7 @@ namespace HotfixLogic.Match
                     }
                 }
             }
+
             return false;
         }
 

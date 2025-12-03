@@ -104,5 +104,11 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         /// <returns></returns>
         bool CheckItemTarget(EcsWorld world, int itemId, List<int> elementEntities);
+
+        /// <summary>
+        /// 检查当前元素是否可能形成匹配
+        /// </summary>
+        /// <returns></returns>
+        bool HasPotentialMatch(EcsWorld world,List<ShuffleSystem.ShuffleNode> shuffleNodes);
     }
 }

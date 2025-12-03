@@ -42,6 +42,7 @@ namespace HotfixLogic
         DG.Tweening.Sequence _awaitMultiplyTween;
         DG.Tweening.Sequence _selectMultiplyTween;
         DG.Tweening.Sequence _fingerTween;
+        private Tween _delayTween;
 
         List<TextMeshProUGUI> _multiTextList = new List<TextMeshProUGUI>();
 
@@ -100,6 +101,12 @@ namespace HotfixLogic
 				_shineTween.Kill();
 				_shineTween = null;
 			}
+
+            if (_delayTween != null)
+            {
+                _delayTween.Kill();
+                _delayTween = null;
+            }
 
             if (_fingerTween != null) {
                 _fingerTween.Kill();
@@ -479,31 +486,27 @@ namespace HotfixLogic
 			spine_touch.color = new UnityEngine.Color(1, 1, 1, 0);
 			spine_touch.gameObject.SetActive(true);
 
-			var seq = DOTween.Sequence();
-			seq.AppendInterval(5);
-			seq.AppendCallback(() => {
-				ShowFingerTouch();
-				_fingerTween = null;
-			});
-
-			_fingerTween = seq;
-		}
+            _delayTween = DOVirtual.DelayedCall(5, () =>
+            {
+                if(this.IsDestroyed)
+                    return;
+                ShowFingerTouch();
+            });
+        }
 
 		private void ShowFingerTouch() {
-			var seq = DOTween.Sequence();
-			seq.Append(spine_touch.DOFade(1, 0.5f));
-			seq.AppendCallback(() => {
+            _fingerTween = DOTween.Sequence();
+            _fingerTween.Append(spine_touch.DOFade(1, 0.5f));
+            _fingerTween.AppendCallback(() => {
 				spine_touch.AnimationState.SetAnimation(0, "dianji", false);
 			});
-			seq.AppendInterval(1f);
-			seq.Append(spine_touch.DOFade(0, 0.5f));
-			seq.AppendInterval(1f);
-			seq.AppendCallback(() => {
+            _fingerTween.AppendInterval(1f);
+            _fingerTween.Append(spine_touch.DOFade(0, 0.5f));
+            _fingerTween.AppendInterval(1f);
+            _fingerTween.AppendCallback(() => {
 				spine_touch.gameObject.SetActive(true);
 			});
-			seq.SetLoops(-1);
-
-			_fingerTween = seq;
+            _fingerTween.SetLoops(-1);
 		}
     }
 }

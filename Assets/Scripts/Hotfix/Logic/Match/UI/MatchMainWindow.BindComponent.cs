@@ -1,6 +1,6 @@
 ﻿/*-------------------------------------
 Author:DefaultAuthor
-Time:2025/11/20 18:03:06
+Time:2025/12/1 18:23:04
 --------------------------------------*/
 
 using UnityEngine;
@@ -57,6 +57,16 @@ namespace HotfixLogic
 		private CanvasGroup canvasGroup_beginTarget;
 		private GameObject go_targetLayout;
 		private GameObject go_flyTarget;
+		private GameObject go_line;
+		private GameObject go_hLine;
+		private Image img_line1;
+		private Image img_line2;
+		private GameObject go_vLine1;
+		private Image img_line3;
+		private Image img_line4;
+		private GameObject go_vLine2;
+		private Image img_line5;
+		private Image img_line6;
 
 		public override void ScriptGenerate()
 		{
@@ -105,6 +115,16 @@ namespace HotfixLogic
 			canvasGroup_beginTarget = VariableArray.Get<CanvasGroup>(42);
 			go_targetLayout = VariableArray.Get<RectTransform>(43).gameObject;
 			go_flyTarget = VariableArray.Get<RectTransform>(44).gameObject;
+			go_line = VariableArray.Get<RectTransform>(45).gameObject;
+			go_hLine = VariableArray.Get<RectTransform>(46).gameObject;
+			img_line1 = VariableArray.Get<Image>(47);
+			img_line2 = VariableArray.Get<Image>(48);
+			go_vLine1 = VariableArray.Get<RectTransform>(49).gameObject;
+			img_line3 = VariableArray.Get<Image>(50);
+			img_line4 = VariableArray.Get<Image>(51);
+			go_vLine2 = VariableArray.Get<RectTransform>(52).gameObject;
+			img_line5 = VariableArray.Get<Image>(53);
+			img_line6 = VariableArray.Get<Image>(54);
 		}
 	}
 }

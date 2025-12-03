@@ -183,6 +183,30 @@ namespace Hotfix.Logic.GamePlay
             return db.IsCircleElement(element.ConfigId);
         }
 
+        /// <summary>
+        /// 是否可以对格子进行伤害
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="gridEntities"></param>
+        /// <returns></returns>
+        public static bool IsCanDamageThisGrid(EcsWorld world, List<int> gridEntities)
+        {
+            if (gridEntities == null || gridEntities.Count == 0)
+                return false;
+            var eleCom = world.GetPool<ElementComponent>();
+            bool haveCanTouchEle = false;
+            for (int i = 0; i < gridEntities.Count; i++)
+            {
+                ref var element = ref eleCom.Get(gridEntities[i]);
+                if (element.EliminateStyle == EliminateStyle.Target)
+                {
+                    haveCanTouchEle = true;
+                    break;
+                }
+            }
+            return !haveCanTouchEle;
+        }
+
         private static void BuildElementColorMap()
         {
             LevelMapImageDB db = ConfigMemoryPool.Get<LevelMapImageDB>();
