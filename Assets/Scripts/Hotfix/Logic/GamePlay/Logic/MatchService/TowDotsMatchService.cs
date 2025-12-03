@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
 using GameConfig;
+using GameCore.Localization;
+using Hotfix.Define;
+using Hotfix.Utils;
 using HotfixLogic;
 using UnityEngine;
 
@@ -203,6 +206,51 @@ namespace Hotfix.Logic.GamePlay
         public int RandomFunctionElement()
         {
             return 9;
+        }
+
+        public bool CheckItemTarget(EcsWorld world, int itemId, List<int> elementEntities)
+        {
+            if (itemId == (int)ItemDef.EliminateHammer)
+            {
+                var elePool = world.GetPool<ElementComponent>();
+                for (int i = 0; i < elementEntities.Count; i++)
+                {
+                    ref var elementComponent = ref elePool.Get(elementEntities[i]);
+                    if (elementComponent.EliminateStyle == EliminateStyle.Drop ||
+                        elementComponent.EliminateStyle == EliminateStyle.Target)
+                        return false;
+                }
+            }
+
+            if (itemId == (int)ItemDef.EliminateColored)
+            {
+                var elePool = world.GetPool<ElementComponent>();
+                for (int i = 0; i < elementEntities.Count; i++)
+                {
+                    ref var elementComponent = ref elePool.Get(elementEntities[i]);
+                    if (elementComponent.EliminateStyle == EliminateStyle.Target)
+                        return false;
+                }
+
+                var normalElement = world.GetPool<NormalElementComponent>();
+                bool noneNormal = true;
+                for (int i = 0; i < elementEntities.Count; i++)
+                {
+                    if (normalElement.Has(elementEntities[i]))
+                    {
+                        noneNormal = false;
+                        break;
+                    }
+                }
+
+                if (noneNormal)
+                {
+                    CommonUtil.ShowCommonTips(LocalizationPool.Get("Match/SelectNormalElement"));
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private List<GenItemData> GetGenItems(MatchRuleContext context, List<Vector2Int> closedLoop)

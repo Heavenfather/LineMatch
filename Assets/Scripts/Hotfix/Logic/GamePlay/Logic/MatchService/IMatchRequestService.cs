@@ -21,7 +21,7 @@ namespace Hotfix.Logic.GamePlay
         /// <summary>
         /// 发起道具消除请求
         /// </summary>
-        void RequestUseItem(EcsWorld world, int itemId, int targetEntity = -1);
+        void RequestUseItem(EcsWorld world, int itemId, Vector2Int targetGridPos);
 
         /// <summary>
         /// 发起掉落后的自动检测请求 (如全屏爆、收集物掉落等等)

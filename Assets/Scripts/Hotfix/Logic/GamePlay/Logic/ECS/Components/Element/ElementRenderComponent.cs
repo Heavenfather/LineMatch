@@ -30,7 +30,5 @@ namespace Hotfix.Logic.GamePlay
         /// 是否被选中
         /// </summary>
         public bool IsSelected;
-        
-        public bool WasSelected;    // 上一帧状态 (用于变化检测)
     }
 }

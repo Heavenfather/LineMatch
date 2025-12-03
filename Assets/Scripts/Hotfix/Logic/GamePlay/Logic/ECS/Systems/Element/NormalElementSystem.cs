@@ -51,20 +51,8 @@ namespace Hotfix.Logic.GamePlay
                 {
                     // 更新视图闪图的表现
                     UpdateAnimation(renderComp.ViewInstance, normalElementComponent);
-                    renderComp.WasSelected = renderComp.IsSelected; // 更新状态
                     normalElementComponent.IsAnimDirty = false;
                 }
-                
-                // ref var elementComponent = ref _elementPool.Get(entity);
-                // if (elementComponent.LogicState == ElementLogicalState.Dying)
-                // {
-                //     // 销毁视图 播放表现等 TODO...
-                //     Logger.Debug($"销毁元素：{elementComponent.OriginGridPosition}");
-                //     // var renderComp = _elementRenderPool.Get(entity);
-                //     // renderComp.ViewInstance.Destroy();
-                //     // renderComp.ViewInstance = null;
-                //     // renderComp.IsDirty = true;
-                // }
             }
         }
 
@@ -99,7 +87,7 @@ namespace Hotfix.Logic.GamePlay
             {
                 case ElementScaleState.None:
                     // 恢复原状
-                    go.transform.DOScale(1.0f, 0.2f);
+                    go.transform.DOScale(1.0f, 0.1f);
                     if (flashIcon) flashIcon.SetVisible(false);
                     break;
 
@@ -120,16 +108,27 @@ namespace Hotfix.Logic.GamePlay
                     break;
 
                 case ElementScaleState.Breathing:
-                    // 闭环模式：呼吸循环
-                    go.transform.localScale = Vector3.one * 1.2f; // 先设置到底
-                    go.transform.DOScale(1.0f, 0.5f).SetLoops(-1, LoopType.Yoyo);
-
                     // 闪图处理：循环闪烁
                     if (normal.FlashIconAniType == NormalFlashIconAniType.UseItemFlash && flashIcon)
                     {
                         PlayLoopFlash(flashIcon, normal);
                     }
+                    else
+                    {
+                        // 闭环模式：呼吸循环
+                        go.transform.localScale = Vector3.one * 1.2f; // 先设置到底
+                        go.transform.DOScale(1.0f, 0.5f).SetLoops(-1, LoopType.Yoyo);
 
+                    }
+
+                    break;
+                case ElementScaleState.Shake:
+                    // 抖动
+                    if (flashIcon) flashIcon.SetVisible(false);
+                    go.transform.DOShakePosition(0.15f, 0.05f).SetLoops(-1, LoopType.Yoyo).OnKill(() =>
+                    {
+                        go.transform.localPosition = Vector3.zero;
+                    });
                     break;
             }
         }
@@ -151,11 +150,14 @@ namespace Hotfix.Logic.GamePlay
         private void PlayLoopFlash(Transform flashIcon, NormalElementComponent normal)
         {
             flashIcon.SetVisible(true);
-            flashIcon.localScale = Vector3.one * normal.FlashStartScale;
+            flashIcon.localScale = Vector3.one * 0.7f;
             var sp = flashIcon.GetComponent<SpriteRenderer>();
             if (sp) sp.color = new Color(sp.color.r, sp.color.g, sp.color.b, 0.7f);
 
-            flashIcon.DOScale(normal.FlashEndScale, normal.FlashDuration).SetLoops(-1, LoopType.Yoyo).SetEase(Ease.Linear);
+            flashIcon.DOScale(Vector3.one * 1.3f, 1).SetLoops(-1, LoopType.Yoyo).SetEase(Ease.Linear).OnKill(() =>
+            {
+                flashIcon.SetVisible(false);
+            });
         }
     }
 }

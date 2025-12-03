@@ -29,14 +29,15 @@ namespace Hotfix.Logic.GamePlay
             });
         }
 
-        public void RequestUseItem(EcsWorld world, int itemId, int targetEntity = -1)
+        public void RequestUseItem(EcsWorld world, int itemId, Vector2Int targetGridPos)
         {
             CreateMatchRequest(world, new MatchRequestComponent
             {
                 Type = MatchRequestType.UseItem,
                 ItemId = itemId,
                 TriggerEntity = -1, // 道具没有 Trigger 实体
-                TargetEntity = targetEntity,
+                TargetEntity = -1,
+                TargetGridPos = targetGridPos,
                 InvolvedEntities = null
             });
         }

@@ -13,7 +13,7 @@ namespace Hotfix.Logic.GamePlay
         /// 消除服务类型
         /// </summary>
         MatchServiceType MatchServiceType { get; }
-        
+
         /// <summary>
         /// 特殊元素ID数组
         /// </summary>
@@ -71,13 +71,13 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="bombPos"></param>
         /// <returns></returns>
         List<Vector2Int> GetBombPos(Vector2Int bombPos);
-        
+
         /// <summary>
         /// 根据连线的棋子获取消除规则,然后执行 Evaluate 函数
         /// </summary>
         /// <returns></returns>
         IMatchRule GetMatchRule(EcsWorld world, List<int> selectEntities);
-        
+
         /// <summary>
         /// 判断是否形成几何上的方格闭环
         /// </summary>
@@ -98,5 +98,11 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         /// <returns></returns>
         int RandomFunctionElement();
+
+        /// <summary>
+        /// 检查使用道具能不能作用在当前元素
+        /// </summary>
+        /// <returns></returns>
+        bool CheckItemTarget(EcsWorld world, int itemId, List<int> elementEntities);
     }
 }

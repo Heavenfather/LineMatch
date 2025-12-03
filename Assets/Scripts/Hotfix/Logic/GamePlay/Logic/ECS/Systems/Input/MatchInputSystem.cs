@@ -1,16 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using GameConfig;
+using GameCore.Localization;
+using Hotfix.Define;
+using Hotfix.EventParameter;
 using Hotfix.Utils;
 using HotfixCore.Module;
 using HotfixLogic.Match;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Logger = GameCore.Log.Logger;
 
 namespace Hotfix.Logic.GamePlay
 {
-    public class MatchInputSystem : IEcsRunSystem, IEcsInitSystem
+    public class MatchInputSystem : IEcsRunSystem, IEcsInitSystem, IEcsDestroySystem
     {
         private EcsWorld _world;
         private GameStateContext _context;
@@ -51,7 +55,6 @@ namespace Hotfix.Logic.GamePlay
             _normalElementFilter = _world.Filter<NormalElementComponent>().Include<ElementComponent>()
                 .Include<ElementRenderComponent>().End();
             _normalPool = _world.GetPool<NormalElementComponent>();
-
             _inputPool = _world.GetPool<MatchInputComponent>();
             _gridPool = _world.GetPool<GridCellComponent>();
             _elePool = _world.GetPool<ElementComponent>();
@@ -71,13 +74,63 @@ namespace Hotfix.Logic.GamePlay
                 _vibrationForce = constDB.GetConfigIntVal("VibrationForceIOS");
             else
                 _vibrationForce = constDB.GetConfigIntVal("VibrationForce");
+
+            // --- 监听 UI 事件 ---
+            // 玩家点击道具图标 -> 进入道具模式
+            G.EventModule.AddEventListener<EventOneParam<int>>(GameEventDefine.OnMatchUseItem, OnMatchUseItem, this);
+            // 玩家点击取消/空白处 -> 退出道具模式
+            G.EventModule.AddEventListener(GameEventDefine.OnMatchCancelItem, OnCancelItem, this);
+            // 后端扣除成功 -> 执行道具逻辑
+            G.EventModule.AddEventListener<EventTwoParam<int, Vector2Int>>(GameEventDefine.OnMatchUseItemSuccess,
+                OnUseItemSuccess, this);
+            G.EventModule.AddEventListener(GameEventDefine.OnMatchUseItemFail, OnCancelItem, this);
         }
 
         public void Run(IEcsSystems systems)
         {
             if (!G.TouchModule.TouchIsValid()) return;
+            ref var input = ref _inputPool.Get(_inputEntity);
+            if (input.UsingItemId > 0)
+            {
+                // 处理道具模式输入
+                ProcessItemInput(ref input, G.TouchModule.TouchPhase, G.TouchModule.InputPos);
+            }
+            else
+            {
+                ProcessTouchPhase(G.TouchModule.TouchPhase, G.TouchModule.InputPos);
+            }
+        }
 
-            ProcessTouchPhase(G.TouchModule.TouchPhase, G.TouchModule.InputPos);
+        private void ProcessItemInput(ref MatchInputComponent input, TouchPhase phase, Vector2 screenPos)
+        {
+            // 道具模式下，只处理点击
+            if (phase == TouchPhase.Began)
+            {
+                if (IsPointerOverUI(screenPos)) return;
+
+                Vector3 mousePos = _camera.ScreenToWorldPoint(screenPos);
+                int hitGridEntity = RaycastSingleGrid(mousePos);
+
+                if (hitGridEntity >= 0)
+                {
+                    var hitElements = GetTopElements(hitGridEntity);
+                    if (hitElements != null && hitElements.Count > 0)
+                    {
+                        // 1. 验证目标是否合法
+                        if (CheckItemTarget(input.UsingItemId, hitElements))
+                        {
+                            // 通知后端扣道具
+                            ref var grid = ref _gridPool.Get(hitGridEntity);
+                            G.EventModule.DispatchEvent(GameEventDefine.OnMatchReqUseItem,
+                                EventTwoParam<int, Vector2Int>.Create(input.UsingItemId, grid.Position));
+                        }
+                    }
+                }
+                else
+                {
+                    CommonUtil.ShowCommonTips(LocalizationPool.Get("Match/UseItemPosInvalid"));
+                }
+            }
         }
 
         private void ProcessTouchPhase(TouchPhase phase, Vector2 screenPos)
@@ -161,6 +214,12 @@ namespace Hotfix.Logic.GamePlay
             ref var grid = ref _gridPool.Get(gridEntity);
             if (grid.StackedEntityIds == null || grid.StackedEntityIds.Count == 0) return -1;
             return grid.StackedEntityIds[^1];
+        }
+
+        private List<int> GetTopElements(int gridEntity)
+        {
+            ref var grid = ref _gridPool.Get(gridEntity);
+            return grid.StackedEntityIds;
         }
 
         /// <summary>
@@ -398,6 +457,7 @@ namespace Hotfix.Logic.GamePlay
                 input.IsRectangle = false;
                 input.LoopTargetEntityId = -1; // 重置闭合点
             }
+
             UpdateSquareState(ref input);
 
             PlayLinkAudio(input.SelectedGridIds.Count);
@@ -483,9 +543,77 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
+
+        private void OnUseItemSuccess(EventTwoParam<int, Vector2Int> obj)
+        {
+            // 道具使用成功，执行效果
+            Logger.Debug($"Use Item : {obj.Arg1} at {obj.Arg2}");
+            _requestService.RequestUseItem(_world, obj.Arg1, obj.Arg2);
+            
+            StopUseItemState();
+        }
+
+        private void OnCancelItem()
+        {
+            StopUseItemState();
+        }
+
+        /// <summary>
+        /// 开始使用道具
+        /// </summary>
+        /// <param name="obj"></param>
+        private void OnMatchUseItem(EventOneParam<int> obj)
+        {
+            // 修改输入参数
+            ref var input = ref _inputPool.Get(_inputEntity);
+            input.IsDragging = false;
+            input.SelectedEntityIds.Clear();
+            input.SelectedGridIds.Clear();
+            input.UsingItemId = obj.Arg;
+
+            // 棋子表现
+            bool isShake = obj.Arg == (int)ItemDef.EliminateDice;
+            foreach (var entity in _normalElementFilter)
+            {
+                ref var normal = ref _normalPool.Get(entity);
+                var scoreMode = isShake ? ElementScaleState.Shake : ElementScaleState.Breathing;
+                UpdateNormalState(ref normal, scoreMode, NormalFlashIconAniType.UseItemFlash);
+            }
+        }
+
+        private void StopUseItemState()
+        {
+            ref var input = ref _inputPool.Get(_inputEntity);
+            input.UsingItemId = -1;
+            foreach (var entity in _normalElementFilter)
+            {
+                ref var normal = ref _normalPool.Get(entity);
+                UpdateNormalState(ref normal, ElementScaleState.None, NormalFlashIconAniType.None);
+            }
+        }
+
+        /// <summary>
+        /// 检查目标对当前道具是否合法
+        /// </summary>
+        private bool CheckItemTarget(int itemId, List<int> entities)
+        {
+            return _matchService.CheckItemTarget(_world, itemId, entities);
+        }
+
         private void PlayLinkAudio(int count)
         {
             ElementAudioManager.Instance.PlayMatchLink(count);
+        }
+
+        public void Destroy(IEcsSystems systems)
+        {
+            G.EventModule.RemoveEventListener<EventOneParam<int>>(GameEventDefine.OnMatchUseItem, OnMatchUseItem,
+                this);
+            G.EventModule.RemoveEventListener(GameEventDefine.OnMatchCancelItem, OnCancelItem, this);
+            G.EventModule.RemoveEventListener<EventTwoParam<int, Vector2Int>>(GameEventDefine.OnMatchUseItemSuccess,
+                OnUseItemSuccess, this);
+            
+            G.EventModule.RemoveEventListener(GameEventDefine.OnMatchUseItemFail, OnCancelItem, this);
         }
     }
 }
