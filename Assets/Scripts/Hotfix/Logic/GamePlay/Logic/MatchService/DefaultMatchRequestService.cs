@@ -88,6 +88,17 @@ namespace Hotfix.Logic.GamePlay
             });
         }
 
+        public void RequestStarBombDot(EcsWorld world, int dotEntity)
+        {
+            CreateMatchRequest(world, new MatchRequestComponent
+            {
+                Type = MatchRequestType.TowDotsFunctionElement,
+                TriggerEntity = dotEntity,
+                TargetEntity = -1,
+                InvolvedEntities = new List<int>() { dotEntity }
+            });
+        }
+
         // --- 内部通用创建逻辑 ---
         private void CreateMatchRequest(EcsWorld world, MatchRequestComponent reqData)
         {

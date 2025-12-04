@@ -255,12 +255,6 @@ namespace HotfixLogic.Match
 
         public void GameBeginUseElements()
         {
-            //C 关先暂时去掉连胜宝箱，做完TOWDots道具后再打开
-            if (_currentMatchLevelType == MatchLevelType.C)
-            {
-                ClearBeginUseElements();
-            }
-            
             if (_beginUseElements.Count <= 0 && _winStreakElements.Count <= 0)
             {
                 G.EventModule.DispatchEvent(GameEventDefine.OnMatchUpdateSpecialElements,EventThreeParam<List<int>, List<int>, bool>.Create(null, null, false));
@@ -281,6 +275,16 @@ namespace HotfixLogic.Match
         {
             _beginUseElements.Clear();
             _winStreakElements.Clear();
+        }
+
+        public List<int> GetBeginUseElements()
+        {
+            return _beginUseElements;
+        }
+
+        public List<int> GetWinStreakElements()
+        {
+            return _winStreakElements;
         }
 
         public void SetWinStreak(int winStreak)

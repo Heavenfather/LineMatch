@@ -3,6 +3,8 @@ using HotfixCore.Module;
 using GameConfig;
 using System.Collections.Generic;
 using System.Linq;
+using Hotfix.Define;
+using HotfixLogic.Match;
 
 namespace HotfixLogic
 {
@@ -22,7 +24,8 @@ namespace HotfixLogic
 
 		private void InitBoosterItem() {
 			var constConfig = ConfigMemoryPool.Get<ConstConfigDB>();
-			var itemCfg = constConfig.GetConfigStrVal("MatchBeginItem");
+			MatchLevelType matchLevelType = MatchManager.Instance.CurrentMatchLevelType;
+			var itemCfg = matchLevelType == MatchLevelType.C ? constConfig.GetConfigStrVal("MatchBeginItemC") : constConfig.GetConfigStrVal("MatchBeginItem");
 			var itemID = itemCfg.Split('|');
 			for (int i = 0; i < itemID.Length; i++) {
 				var id = itemID[i];

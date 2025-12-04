@@ -44,5 +44,12 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="world"></param>
         /// <param name="dotEntity"></param>
         void RequestSearchDot(EcsWorld world, int dotEntity);
+
+        /// <summary>
+        /// 单个星爆点被动爆炸
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="dotEntity"></param>
+        void RequestStarBombDot(EcsWorld world, int dotEntity);
     }
 }

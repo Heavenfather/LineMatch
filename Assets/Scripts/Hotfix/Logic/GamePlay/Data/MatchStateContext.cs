@@ -10,6 +10,11 @@ namespace Hotfix.Logic.GamePlay
     /// </summary>
     public class MatchStateContext
     {
+        /// <summary>
+        /// 是否游戏结算阶段
+        /// </summary>
+        public bool IsGameSettlement;
+        
         private int _remainStep;
         /// <summary>
         /// 关卡剩余步数
@@ -161,6 +166,7 @@ namespace Hotfix.Logic.GamePlay
             DropElementMapCounts.Clear();
             GlobalDropQuotas.Clear();
             TargetValidColumns.Clear();
+            IsGameSettlement = false;
         }
     }
 }

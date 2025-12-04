@@ -13,7 +13,5 @@ namespace Hotfix.Logic.GamePlay
         public int RemainStep;
 
         public Vector3 StepTextWorldPos;
-        
-        public Vector3 CoinIconWorldPos;
     }
 }

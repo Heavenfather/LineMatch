@@ -27,6 +27,33 @@ namespace Hotfix.Logic.GamePlay
                     outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, new Vector2Int(posCom.X, posCom.Y), 1, entity));
                 }
             }
+            // 同色的星爆点和搜寻点
+            EcsFilter searchDotFilter = ctx.World.Filter<SearchDotComponent>().End();
+            foreach (var entity in searchDotFilter)
+            {
+                ref var ele = ref ctx.World.GetPool<ElementComponent>().Get(entity);
+                ref var posCom = ref ctx.World.GetPool<ElementPositionComponent>().Get(entity);
+                ref var dotCom = ref ctx.World.GetPool<SearchDotComponent>().Get(entity);
+                if (ele.LogicState == ElementLogicalState.Idle && 
+                    dotCom.SearchDotBaseElementId == ctx.Request.ConfigId)
+                {
+                    // 生成扣次数指令
+                    outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, new Vector2Int(posCom.X, posCom.Y), 1, entity));
+                }
+            }
+            EcsFilter starBombDotFilter = ctx.World.Filter<StarBombComponent>().End();
+            foreach (var entity in starBombDotFilter)
+            {
+                ref var ele = ref ctx.World.GetPool<ElementComponent>().Get(entity);
+                ref var posCom = ref ctx.World.GetPool<ElementPositionComponent>().Get(entity);
+                ref var dotCom = ref ctx.World.GetPool<StarBombComponent>().Get(entity);
+                if (ele.LogicState == ElementLogicalState.Idle && 
+                    dotCom.StarDotBaseElementId == ctx.Request.ConfigId)
+                {
+                    // 生成扣次数指令
+                    outActions.Add(factory.CreateAtomicAction(MatchActionType.Damage, new Vector2Int(posCom.X, posCom.Y), 1, entity));
+                }
+            }
 
             // Logger.Debug($"总共生成伤害指令:{outActions.Count}");
 

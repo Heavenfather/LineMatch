@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using GameConfig;
+using GameCore.Localization;
 using Hotfix.Define;
 using Hotfix.EventParameter;
+using Hotfix.Utils;
 using HotfixCore.Module;
 using UnityEngine;
 using Logger = GameCore.Log.Logger;
@@ -183,6 +185,14 @@ namespace Hotfix.Logic.GamePlay
                     // 如果连强制配对都做不到（说明没有相邻的格子），那就是真·死局
                     return false;
                 }
+                else
+                {
+                    CommonUtil.ShowCommonTips(LocalizationPool.Get("Match/ForceChanged"));
+                }
+            }
+            else
+            {
+                CommonUtil.ShowCommonTips(LocalizationPool.Get("Match/NotPair"));
             }
 
             // 4. 应用最终结果 (动画 & 数据更新)

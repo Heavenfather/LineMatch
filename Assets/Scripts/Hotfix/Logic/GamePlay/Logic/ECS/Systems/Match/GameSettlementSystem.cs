@@ -23,9 +23,11 @@ namespace Hotfix.Logic.GamePlay
         private IBoard _board;
         private IMatchService _matchService;
         private Camera _mainCamera;
+        private ICollectItemFlyService _flyService;
         
         // 用于判断棋盘是否忙碌
         private EcsFilter _boardSystemCheckFilter;
+        private EcsFilter _flyFilter;
         
         private EcsFilter _settlementFilter;
         private EcsPool<GameSettlementComponent> _settlementPool;
@@ -53,7 +55,9 @@ namespace Hotfix.Logic.GamePlay
             _matchService = _context.ServiceFactory.GetService(_context.CurrentMatchType);
             _trailEmitter = _context.SceneView.GetSceneRootComponent<TrailEmitter>("MatchCanvas", "GridBoard");
             _mainCamera = _context.SceneView.GetSceneRootComponent<Camera>("MainCamera", "");
+            _flyService = MatchBoot.Container.Resolve<ICollectItemFlyService>();
 
+            _flyFilter = _world.Filter<CollectItemFlyComponent>().End();
             _settlementFilter = _world.Filter<GameSettlementComponent>().End();
             _settlementPool = _world.GetPool<GameSettlementComponent>();
             _elementPool = _world.GetPool<ElementComponent>();
@@ -134,6 +138,7 @@ namespace Hotfix.Logic.GamePlay
                     Value = 1,
                     GridPos = _damagePos[i],
                 });
+                RequestCoinFly(_damagePos[i]);
             }
 
             int pendingEntity = _world.NewEntity();
@@ -150,7 +155,21 @@ namespace Hotfix.Logic.GamePlay
             int remainStep = _context.MatchStateContext.RemainStep;
             G.EventModule.DispatchEvent(GameEventDefine.OnMatchStepMoveEnd,EventOneParam<int>.Create(remainStep));
         }
+        
+        private void RequestCoinFly(Vector2Int gridPos)
+        {
+            _flyService.ResetFlyIndex();
+            var startPos = MatchPosUtil.CalculateWorldPosition(gridPos.x, gridPos.y, 1, 1, ElementDirection.None);
+            var coinScreenPos = _context.MatchMainWindow.GetCoinScreenPosition();
+            var targetPos = _mainCamera.ScreenToWorldPoint(coinScreenPos);
+            _flyService.RequestCollectItemFly(_world, (int)CollectItemEnum.Coin, startPos, targetPos,
+                OnCoinFlyComplete, 0, true);
+        }
 
+        private void OnCoinFlyComplete()
+        {
+            G.EventModule.DispatchEvent(GameEventDefine.OnMatchBeginCollectResultCoin);
+        }
         
         /// <summary>
         /// 检查游戏是否处于空闲状态
@@ -158,7 +177,8 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         private bool IsGameIdle()
         {
-            return _boardSystemCheckFilter.GetEntitiesCount() > 0;
+            return _boardSystemCheckFilter.GetEntitiesCount() > 0 &&
+                   _flyFilter.GetEntitiesCount() <= 0;
         }
         
         private void OnStepComplete(int index)

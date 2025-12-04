@@ -16,7 +16,6 @@ namespace HotfixLogic.Match
     /// </summary>
     public class BlockElementItem : ElementBase
     {
-        private SpriteRenderer _renderer;
         private Sprite _boxNormalSprite;
         private Sprite _boxFinishSprite;
 
@@ -25,9 +24,8 @@ namespace HotfixLogic.Match
 
 
             if (Data.ConfigId == 130) {
-                if (_renderer == null) {
-                    _renderer = GameObject.transform.Find("Icon")?.GetComponent<SpriteRenderer>();
-                    _boxNormalSprite = _renderer.sprite;
+                if (_boxNormalSprite == null) {
+                    var renderer = GameObject.transform.Find("Icon").GetComponent<SpriteRenderer>();
                     InitBoxFinishSprite();
                 } 
 
@@ -181,15 +179,13 @@ namespace HotfixLogic.Match
 
         public void LoadBoxSprite(bool isFinish) {
             Sprite sprite = isFinish? _boxFinishSprite : _boxNormalSprite;
-            if (sprite == null || _renderer.sprite == sprite) {
+            var renderer = GameObject.transform.Find("Icon").GetComponent<SpriteRenderer>();
+
+            if (sprite == null || renderer.sprite == sprite) {
                 return;
             }
 
-            if (_renderer.gameObject.activeSelf) {
-                _renderer.sprite = sprite;
-            } else {
-                _renderer.sprite = sprite;
-            }
+            renderer.sprite = sprite;
         }
 
         private void InitBoxFinishSprite() {

@@ -1,5 +1,6 @@
-﻿using System;
-using Cysharp.Threading.Tasks;
+﻿using Hotfix.Define;
+using HotfixCore.Module;
+using HotfixLogic.Match;
 using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
@@ -8,6 +9,7 @@ namespace Hotfix.Logic.GamePlay
     {
         private EcsWorld _world;
         private EcsFilter _filter;
+        private GameStateContext _context;
         private IElementFactoryService _elementService;
         private IMatchRequestService _requestService;
         private EcsPool<ElementPositionComponent> _posPool;
@@ -17,6 +19,7 @@ namespace Hotfix.Logic.GamePlay
         public void Init(IEcsSystems systems)
         {
             _world = systems.GetWorld();
+            _context = systems.GetShared<GameStateContext>();
             _elementService = MatchBoot.Container.Resolve<IElementFactoryService>();
             _requestService = MatchBoot.Container.Resolve<IMatchRequestService>();
             _posPool = _world.GetPool<ElementPositionComponent>();
@@ -34,16 +37,14 @@ namespace Hotfix.Logic.GamePlay
             foreach (var entity in _filter)
             {
                 ref var bombCom = ref _bombPool.Get(entity);
-                // if (bombCom.AutoBomb)
-                {
-                    ref var posCom = ref _posPool.Get(entity);
-                    _requestService.RequestBomb(_world, new Vector2Int(posCom.X, posCom.Y));
+                ref var posCom = ref _posPool.Get(entity);
+                _requestService.RequestBomb(_world, new Vector2Int(posCom.X, posCom.Y));
 
-                    _elementService.AddDestroyElementTag2Entity(_world, entity);
-                    // 立刻移除
-                    _stableCheckPool.Del(entity);
-                }
+                _elementService.AddDestroyElementTag2Entity(_world, entity);
+                // 立刻移除
+                _stableCheckPool.Del(entity);
             }
         }
+
     }
 }

@@ -407,6 +407,9 @@ namespace Hotfix.Logic.GamePlay
             input.SelectedGridIds.Add(gridEntity);
             input.SelectedEntityIds.Add(elementEntity);
 
+            // 更新可变颜色组件
+            UpdateVariableDotColors(ref input);
+
             // 更新元素渲染选中效果
             // 先只处理普通元素的选中效果
             if (_normalPool.Has(elementEntity))
@@ -443,6 +446,8 @@ namespace Hotfix.Logic.GamePlay
             int removedEntity = input.SelectedEntityIds[^1];
             input.SelectedGridIds.RemoveAt(input.SelectedGridIds.Count - 1);
             input.SelectedEntityIds.RemoveAt(input.SelectedEntityIds.Count - 1);
+
+            UpdateVariableDotColors(ref input);
 
             // 取消该棋子的高亮
             if (_normalPool.Has(removedEntity))
@@ -603,6 +608,68 @@ namespace Hotfix.Logic.GamePlay
         private void PlayLinkAudio(int count)
         {
             ElementAudioManager.Instance.PlayMatchLink(count);
+        }
+
+        /// <summary>
+        /// 更新HorizontalDot的颜色（根据当前连线状态）
+        /// </summary>
+        private void UpdateVariableDotColors(ref MatchInputComponent input)
+        {
+            var colorPool = _world.GetPool<VariableColorComponent>();
+            var starBomb = _world.GetPool<StarBombComponent>();
+            var searchDot = _world.GetPool<SearchDotComponent>();
+            // 确定当前连线的颜色
+            int currentColor = 0;
+            // 遍历所有已选中的实体 先找出普通棋子的id
+            foreach (var entityId in input.SelectedEntityIds)
+            {
+                // 如果是Normal棋子，更新currentColor
+                if (_normalPool.Has(entityId))
+                {
+                    ref var element = ref _elePool.Get(entityId);
+                    currentColor = element.ConfigId;
+                    break;
+                }
+                if (starBomb.Has(entityId))
+                {
+                    currentColor = starBomb.Get(entityId).StarDotBaseElementId;
+                    break;
+                }
+                if (searchDot.Has(entityId))
+                {
+                    currentColor = searchDot.Get(entityId).SearchDotBaseElementId;
+                    break;
+                }
+            }
+
+            //再更新颜色组件
+            var variableFilter = _world.Filter<VariableColorComponent>().End();
+            int lastEntity = input.SelectedEntityIds[^1];
+            ref var lastPosCom = ref _posPool.Get(lastEntity);
+            foreach (var entity in variableFilter)
+            {
+                ref var variableCom = ref colorPool.Get(entity);
+                if (input.SelectedEntityIds.Contains(entity))
+                {
+                    if (variableCom.CurrentColorId != currentColor)
+                    {
+                        variableCom.CurrentColorId = currentColor;
+                        variableCom.IsColorDirty = true;
+                    }
+                    variableCom.X = lastPosCom.X;
+                    variableCom.Y = lastPosCom.Y;
+                }
+                else
+                {
+                    // 可能是撤销了选中，恢复颜色
+                    variableCom.CurrentColorId = 0;
+                    variableCom.IsColorDirty = true;
+                    
+                    ref var posCom = ref _posPool.Get(entity);
+                    variableCom.X = posCom.X;
+                    variableCom.Y = posCom.Y;
+                }
+            }
         }
 
         public void Destroy(IEcsSystems systems)

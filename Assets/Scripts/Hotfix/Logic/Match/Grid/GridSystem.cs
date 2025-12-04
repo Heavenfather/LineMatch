@@ -190,18 +190,19 @@ namespace HotfixLogic.Match
         private void OnMatchCollectFinishTarget(EventOneParam<int> param) {
             var targetId = param.Arg;
 
-            // if (targetId == 129) {
-            //     SetBoxElementFinish().Forget();
-            // }
+            if (targetId == 129) {
+                SetBoxElementFinish().Forget();
+            }
         }
 
         private async UniTask SetBoxElementFinish() {
             await UniTask.Delay(TimeSpan.FromSeconds(0.2f));
-
             var elements = ElementSystem.Instance.GetAllElementsById(130);
             foreach (var element in elements)
             {
-                (element as BlockElementItem).LoadBoxSprite(true);
+                if (element is BlockElementItem blockElementItem) {
+                    blockElementItem.LoadBoxSprite(true);
+                }
             }
         }
 
@@ -1218,7 +1219,7 @@ namespace HotfixLogic.Match
                         break;
                     }
                 }
-            }
+            }   
 
             if (isResult) {
                 specialIds = specialIds.OrderBy(n => random.Next()).ToList();

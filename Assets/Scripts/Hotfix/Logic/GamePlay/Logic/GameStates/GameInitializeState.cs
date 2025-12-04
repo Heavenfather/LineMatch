@@ -54,6 +54,25 @@ namespace Hotfix.Logic.GamePlay
             return UniTask.FromResult(true);
         }
 
+        private void InitializeCollectItemService()
+        {
+            // 获取或创建CollectItemRoot
+            Transform poolRoot = Context.SceneView.GetSceneRootTransform("MatchCanvas", "CollectItemRoot");
+            if (poolRoot == null)
+            {
+                Transform matchCanvas = Context.SceneView.GetSceneRootTransform("MatchCanvas", "");
+                GameObject collectRoot = new GameObject("CollectItemRoot");
+                collectRoot.transform.SetParent(matchCanvas, false);
+                poolRoot = collectRoot.transform;
+            }
+
+            // 创建对象池服务
+            var poolService = new CollectItemPoolService(poolRoot);
+            
+            // 创建并注册收集道具飞行服务
+            var collectFlyService = new CollectItemFlyService(poolService);
+            MatchBoot.Container.RegisterSingleton<ICollectItemFlyService>(collectFlyService);
+        }
 
         private void RegisterEcsWorld()
         {
@@ -61,12 +80,17 @@ namespace Hotfix.Logic.GamePlay
             Context.World = _world;
             _systems = new EcsSystems(_world, Context);
             Context.Systems = _systems;
+            
+            // 初始化收集道具服务
+            InitializeCollectItemService();
             _systems
                 // !!!!!!!!!! 添加的顺序影响着每个系统的初始化逻辑和更新的先后顺序，谨慎思考添加顺序 !!!!!!!!!!
                 // 棋盘生命周期
                 .Add(new BoardRootSystem())
                 .Add(new BoardInitSystem())
                 .Add(new BoardRenderSystem())
+                // 开局道具应用
+                .Add(new BeginItemApplySystem())
                 // 棋子构建，棋子的渲染和创建
                 .Add(new ElementSpawnSystem())
                 .Add(new ElementViewInitSystem())
@@ -87,9 +111,15 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new BackgroundElementSystem())
                 .Add(new BombElementSystem())
                 .Add(new SearchDotsSystem())
+                .Add(new StarBombSystem())
+                .Add(new VariableColorSystem())
+                .Add(new HorizontalDotSystem())
+                .Add(new TowDotsBombDotSystem())
+                .Add(new TowDotsColoredBallSystem())
 
                 // Normal需要排在最后，因为其它棋子可能需要对它进行处理
                 .Add(new NormalElementSystem())
+                .Add(new CollectItemFlySystem())// 收集道具飞行系统
                 //------- 各个棋子处理完成格子逻辑 统一交由 ElementDestroySystem 执行回收 -------------
                 .Add(new ElementDestroySystem()) // 元素消除
                 .Add(new ProjectileSystem()) //生成新的棋子
@@ -97,7 +127,6 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new DropElementSpawnSystem()) //掉落元素生成
                 .Add(new DropElementAnimationSystem()) //掉落元素动画
                 .Add(new PostDropActionSystem()) // 处理掉落渲染处理
-                
                 
                 .Add(new ShuffleSystem()) // 洗牌检测
                 .Add(new ShuffleAnimationSystem())

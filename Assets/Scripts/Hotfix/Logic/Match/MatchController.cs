@@ -577,8 +577,17 @@ namespace HotfixLogic
         private async UniTask EnterMatch()
         {
             //先这样兼容旧的系统，后面全面重构完后，就只有一个入口了
-            var matchType = MatchManager.Instance.CurrentMatchGameType;
-            if (matchType == MatchGameType.NormalMatch)
+            bool isEnterNewBoot = false;
+            var levelType = MatchManager.Instance.CurrentMatchLevelType;
+            if (levelType == MatchLevelType.C || levelType == MatchLevelType.Editor)
+            {
+                isEnterNewBoot = levelType != MatchLevelType.Editor || MatchManager.Instance.CurrentMatchGameType == MatchGameType.TowDots;
+            }
+            if (isEnterNewBoot)
+            {
+                await MatchBoot.BootStart(_matchData.CurrentLevelData, MatchServiceType.TowDots, _window);
+            }
+            else
             {
                 _isEnterGuideLevel = _matchData.TryGetGuideLevel(out var guideLevels);
                 List<LevelData> guideLevelsData = null;
@@ -589,10 +598,6 @@ namespace HotfixLogic
                 }
 
                 await MatchManager.Instance.Start(_matchData.CurrentLevelData, guideLevelsData);
-            }
-            else if(matchType == MatchGameType.TowDots)
-            {
-                await MatchBoot.BootStart(_matchData.CurrentLevelData, MatchServiceType.TowDots, _window);
             }
             InitWindowState();
         }
@@ -662,7 +667,13 @@ namespace HotfixLogic
 
             int winStreakCount = MatchManager.Instance.GetWinStreakBox();
 
-            var rewardStr = ConfigMemoryPool.Get<streakRewardDB>()[winStreakCount].reward;
+            var streakDB = ConfigMemoryPool.Get<streakRewardDB>();
+            var levelType = MatchManager.Instance.CurrentMatchLevelType;
+
+            var rewardStr = levelType == MatchLevelType.C
+                ? streakDB[winStreakCount].rewardC
+                : streakDB[winStreakCount].reward;
+            
             List<int> rewardIDList = new List<int>();
             var db = ConfigMemoryPool.Get<ItemElementDictDB>();
             foreach (var item in rewardStr.Split('|'))
@@ -701,11 +712,17 @@ namespace HotfixLogic
 
         protected override void OnDestroy()
         {
-            var matchType = MatchManager.Instance.CurrentMatchGameType;
-            if (matchType == MatchGameType.NormalMatch)
-                MatchManager.Instance.Quit();
-            else if (matchType == MatchGameType.TowDots)
+            bool isEnterNewBoot = false;
+            var levelType = MatchManager.Instance.CurrentMatchLevelType;
+            if (levelType == MatchLevelType.C || levelType == MatchLevelType.Editor)
+            {
+                isEnterNewBoot = levelType != MatchLevelType.Editor || MatchManager.Instance.CurrentMatchGameType == MatchGameType.TowDots;
+            }
+            
+            if (isEnterNewBoot)
                 MatchBoot.BootExit();
+            else
+                MatchManager.Instance.Quit();
             G.UIModule.SetSceneCamera(null);
             DifficultyStrategyManager.Instance.SetCurrentUseItemState(false);
         }

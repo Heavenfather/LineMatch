@@ -3,6 +3,7 @@ using GameConfig;
 using GameCore.Localization;
 using Hotfix.Define;
 using Hotfix.Utils;
+using HotfixCore.Extensions;
 using HotfixLogic;
 using UnityEngine;
 
@@ -374,6 +375,16 @@ namespace Hotfix.Logic.GamePlay
             return false;
         }
 
+        
+        public Dictionary<int, int> GetBonusSpawnPositions(EcsWorld world, List<int> itemsToSpawn)
+        {
+            Dictionary<int, int> result = new Dictionary<int, int>();
+            if (itemsToSpawn == null || itemsToSpawn.Count == 0) return result;
+
+            // 需要参考GridSystem里面的 OnMatchUpdateSpecialElements 函数，满足那里面的需求 TODO...
+            return result;
+        }
+        
         private GenItemData GenElementData(List<Vector2Int> closedLoop, out bool result, out OneTakeScoreType scoreType)
         {
             result = true;
@@ -424,3 +435,4 @@ namespace Hotfix.Logic.GamePlay
         }
     }
 }
+      

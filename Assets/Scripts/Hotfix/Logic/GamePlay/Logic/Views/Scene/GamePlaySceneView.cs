@@ -27,6 +27,8 @@ namespace Hotfix.Logic.GamePlay
                     Scene = scene;
                     scene.GetRootGameObjects(SceneAllObjects);
 
+                    Camera mainCamera = GetSceneRoot("MainCamera").GetComponent<Camera>();
+                    G.UIModule.SetSceneCamera(mainCamera);
                     tcs.TrySetResult();
                 },
                 progressCallBack: (progress) => { CommonLoading.ShowLoading(LoadingEnum.Match, progress * 0.6f); });

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using GameConfig;
+using Hotfix.Define;
 using HotfixLogic.Match;
 using UnityEngine;
 
@@ -62,6 +63,7 @@ namespace Hotfix.Logic.GamePlay
                 ref var eleCom = ref _elementPool.Get(entity);
                 CalculateDelElement(eleCom.ConfigId);
                 AddBlockScore(eleCom.ConfigId);
+                CalculateCoin();
                 // 6. 彻底销毁 ECS 实体
                 _world.DelEntity(entity);
             }
@@ -117,6 +119,16 @@ namespace Hotfix.Logic.GamePlay
             int baseScore = config.score;
             MatchManager.Instance.AddScore(baseScore);
             return true;
+        }
+
+        private void CalculateCoin()
+        {
+            if(!_context.MatchStateContext.IsGameSettlement)
+                return;
+            if (_destroyedElementMap.ContainsKey((int)ElementIdConst.Coin))
+                _destroyedElementMap[(int)ElementIdConst.Coin] += 1;
+            else
+                _destroyedElementMap.Add((int)ElementIdConst.Coin, 1);
         }
         
         private void RecycleView(int entity)

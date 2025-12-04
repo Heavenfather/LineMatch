@@ -35,7 +35,6 @@ namespace Hotfix.Logic.GamePlay
             _effectCamera = _context.SceneView.GetSceneRootComponent<Camera>("MainCamera", "EffectCamera");
             _guideCamera = _context.SceneView.GetSceneRootComponent<Camera>("GuideCamera", "");
             
-            G.UIModule.SetSceneCamera(_mainCamera);
             _bgPool = _world.GetPool<BoardBgComponent>();
             
             CreateEntities();

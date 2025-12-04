@@ -14,9 +14,10 @@ namespace Hotfix.Logic.GamePlay
         private EcsPool<MatchInputComponent> _inputPool;
         private EcsPool<ElementPositionComponent> _posPool;
         private EcsPool<SearchDotComponent> _searchPool;
+        private EcsPool<StarBombComponent> _starBombPool;
+        private EcsPool<NormalElementComponent> _normalPool;
         private EcsPool<ElementComponent> _elePool;
         private Camera _mainCamera;
-
         public void Init(IEcsSystems systems)
         {
             _world = systems.GetWorld();
@@ -24,8 +25,10 @@ namespace Hotfix.Logic.GamePlay
             _posPool = _world.GetPool<ElementPositionComponent>();
             _elePool = _world.GetPool<ElementComponent>();
             _searchPool = _world.GetPool<SearchDotComponent>();
+            _starBombPool = _world.GetPool<StarBombComponent>();
+            _normalPool = _world.GetPool<NormalElementComponent>();
             _filter = _world.Filter<MatchInputComponent>().End();
-            
+
             var context = systems.GetShared<GameStateContext>();
             _mainCamera = context.SceneView.GetSceneRootComponent<Camera>("MainCamera", "");
         }
@@ -40,26 +43,43 @@ namespace Hotfix.Logic.GamePlay
         private void UpdateVisuals(in MatchInputComponent input)
         {
             // 如果不在拖拽且没有选中，清除线
-            if (!input.IsDragging && input.SelectedEntityIds.Count == 0)
+            if (!input.IsDragging)
             {
                 LineController.Instance.ClearAllLines();
                 return;
             }
 
-            // 1. 设置颜色 (取第一个元素的颜色)
-            if (input.SelectedEntityIds.Count > 0)
+            if (input.SelectedEntityIds == null || input.SelectedEntityIds.Count == 0)
+                return;
+
+            // 1. 设置颜色
+            int colorId = 0;
+            for (int i = 0; i < input.SelectedEntityIds.Count; i++)
             {
-                int firstEntity = input.SelectedEntityIds[0];
-                ref var ele = ref _elePool.Get(firstEntity);
-                int configId = ele.ConfigId;
-                if (_searchPool.Has(firstEntity))
+                if (_normalPool.Has(input.SelectedEntityIds[i]))
                 {
-                    ref var searchCom = ref _searchPool.Get(firstEntity);
-                    configId = searchCom.SearchDotBaseElementId;
+                    ref var eleCom = ref _elePool.Get(input.SelectedEntityIds[i]);
+                    colorId = eleCom.ConfigId;
+                    break;
                 }
-                Color c = MatchElementUtil.GetElementColor(configId);
-                LineController.Instance.SetLineColor(c);
+
+                if (_starBombPool.Has(input.SelectedEntityIds[i]))
+                {
+                    ref var starBombCom = ref _starBombPool.Get(input.SelectedEntityIds[i]);
+                    colorId = starBombCom.StarDotBaseElementId;
+                    break;
+                }
+
+                if (_searchPool.Has(input.SelectedEntityIds[i]))
+                {
+                    ref var searchCom = ref _searchPool.Get(input.SelectedEntityIds[i]);
+                    colorId = searchCom.SearchDotBaseElementId;
+                    break;
+                }
             }
+            
+            Color c = MatchElementUtil.GetElementColor(colorId);
+            LineController.Instance.SetLineColor(c);
 
             // 2. 更新 LineRenderer 点
             LineController.Instance.ClearAllLines(); // 先清空再重画
@@ -78,9 +98,9 @@ namespace Hotfix.Logic.GamePlay
                     ref var loopTargetPos = ref _posPool.Get(input.LoopTargetEntityId);
                     LineController.Instance.AddUnderPoint(loopTargetPos.WorldPosition);
                 }
-        
+
                 // 闭环时不再显示手指牵引线
-                LineController.Instance.ClearOverLine(); 
+                LineController.Instance.ClearOverLine();
             }
             // 3. 非闭环时，处理手指牵引线
             else if (input.IsDragging && input.SelectedEntityIds.Count > 0)

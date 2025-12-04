@@ -152,24 +152,22 @@ namespace Hotfix.Logic.GamePlay
             }
         }
 
-        public static void AddSingleScore(in ElementComponent element)
+        public static void AddSingleNormalElementScore(in ElementComponent element)
         {
             ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
             ref readonly ElementMap config = ref db[element.ConfigId];
+            if(config.elementType != ElementType.Normal)
+                return;
             MatchManager.Instance.AddScore(config.score);
         }
 
-        public static void AddSingleScore(EcsWorld world, int entityId)
+        public static void AddSingleNormalElementScore(EcsWorld world, int entityId)
         {
-            ref var element = ref world.GetPool<ElementComponent>().Get(entityId);
-            AddSingleScore(element);
-        }
-        
-        public static void AddSingleScore(int configId)
-        {
-            ElementMapDB db = ConfigMemoryPool.Get<ElementMapDB>();
-            ref readonly ElementMap config = ref db[configId];
-            MatchManager.Instance.AddScore(config.score);
+            if(!world.IsEntityAliveInternal(entityId))
+                return;
+            var elementPool = world.GetPool<ElementComponent>();
+            ref var element = ref elementPool.Get(entityId);
+            AddSingleNormalElementScore(element);
         }
 
         /// <summary>

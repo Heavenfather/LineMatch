@@ -3,6 +3,7 @@ using GameConfig;
 using GameCore.Localization;
 using Hotfix.Define;
 using Hotfix.Utils;
+using HotfixCore.Extensions;
 using HotfixLogic;
 using UnityEngine;
 
@@ -87,15 +88,101 @@ namespace Hotfix.Logic.GamePlay
                 }
             }
 
-            //白色的点可以和任意点连 也就是只要任意的棋子是 IsMatchable 那就是可连的
+            // 可变颜色点的判断连接
+            var variableColorPool = world.GetPool<VariableColorComponent>();
+            bool fromHasVariable = variableColorPool.Has(fromEntity);
+            bool toHasVariable = variableColorPool.Has(toEntity);
+
+            // 如果涉及到可变颜色组件
+            if (fromHasVariable || toHasVariable)
+            {
+                return CanConnectVariableColor(fromComponent, toComponent, fromEntity, toEntity,
+                    fromHasVariable, toHasVariable, variableColorPool);
+            }
+
             return fromComponent.IsMatchable && toComponent.IsMatchable;
         }
 
-        public bool IsWhiteDot(int elementId)
+        /// <summary>
+        /// 判断可变颜色点是否可以连接
+        /// </summary>
+        private bool CanConnectVariableColor(in ElementComponent fromComponent,
+            in ElementComponent toComponent, int fromEntity, int toEntity,
+            bool fromHasVariable, bool toHasVariable, EcsPool<VariableColorComponent> variableColorPool)
         {
-            return elementId == SpecialElements[3] ||
-                   elementId == SpecialElements[4] ||
-                   elementId == SpecialElements[5];
+            // 1. 两个都有VariableColorComponent
+            if (fromHasVariable && toHasVariable)
+            {
+                ref var fromVariable = ref variableColorPool.Get(fromEntity);
+                ref var toVariable = ref variableColorPool.Get(toEntity);
+
+                // 如果from有颜色且被冻结，不能连接
+                if (fromVariable.CurrentColorId != 0 && fromVariable.IsCanFreezeConnect)
+                    return false;
+
+                // 如果to有颜色且被冻结，不能连接
+                if (toVariable.CurrentColorId != 0 && toVariable.IsCanFreezeConnect)
+                    return false;
+
+                // 两个都是白色（无颜色），可以连接
+                if (fromVariable.CurrentColorId == 0 && toVariable.CurrentColorId == 0)
+                    return true;
+
+                // 一个有颜色，一个无颜色，可以连接（颜色传染）
+                if (fromVariable.CurrentColorId == 0 || toVariable.CurrentColorId == 0)
+                    return true;
+
+                // 两个都有颜色，必须同色
+                return fromVariable.CurrentColorId == toVariable.CurrentColorId;
+            }
+
+            // 2. 只有from有VariableColorComponent
+            if (fromHasVariable)
+            {
+                ref var fromVariable = ref variableColorPool.Get(fromEntity);
+
+                // 如果有颜色且被冻结，不能连接
+                if (fromVariable.CurrentColorId != 0 && fromVariable.IsCanFreezeConnect)
+                    return false;
+
+                // 如果是白色（无颜色），可以连接任意IsMatchable的棋子
+                if (fromVariable.CurrentColorId == 0)
+                    return toComponent.IsMatchable;
+
+                // 如果有颜色，只能连接同色的Normal棋子
+                if (toComponent.Type == ElementType.Normal)
+                {
+                    return fromVariable.CurrentColorId == toComponent.ConfigId;
+                }
+
+                // 其他情况不能连接
+                return false;
+            }
+
+            // 3. 只有to有VariableColorComponent
+            if (toHasVariable)
+            {
+                ref var toVariable = ref variableColorPool.Get(toEntity);
+
+                // 如果有颜色且被冻结，不能连接
+                if (toVariable.CurrentColorId != 0 && toVariable.IsCanFreezeConnect)
+                    return false;
+
+                // 如果是白色（无颜色），可以连接任意IsMatchable的棋子
+                if (toVariable.CurrentColorId == 0)
+                    return fromComponent.IsMatchable;
+
+                // 如果有颜色，只能连接同色的Normal棋子
+                if (fromComponent.Type == ElementType.Normal)
+                {
+                    return toVariable.CurrentColorId == fromComponent.ConfigId;
+                }
+
+                // 其他情况不能连接
+                return false;
+            }
+
+            return false;
         }
 
         public int ElementType2ConfigId(ElementType elementType)
@@ -313,7 +400,76 @@ namespace Hotfix.Logic.GamePlay
             // 其余情况返回false
             return false;
         }
+        
+        public Dictionary<int, int> GetBonusSpawnPositions(EcsWorld world, List<int> itemsToSpawn)
+        {
+            Dictionary<int, int> result = new Dictionary<int, int>();
+            if (itemsToSpawn == null || itemsToSpawn.Count == 0) return result;
 
+            // --- 1. 收集第一梯队：随机生成的普通棋子 ---
+            var randomFilter = world.Filter<RandomGeneratedTag>()
+                                    .Include<NormalElementComponent>()
+                                    .Include<ElementComponent>()
+                                    .End();
+
+            List<int> primaryCandidates = new List<int>();
+            
+            foreach (var entity in randomFilter)
+            {
+                primaryCandidates.Add(entity);
+            }
+
+            // --- 2. 收集第二梯队：配置生成的普通棋子 ---
+            // 只有当第一梯队数量不够时，才去扫描第二梯队
+            List<int> fallbackCandidates = null;
+            
+            if (primaryCandidates.Count < itemsToSpawn.Count)
+            {
+                fallbackCandidates = new List<int>();
+                
+                // 筛选所有 Normal 但没有 RandomTag 的实体
+                var allNormalFilter = world.Filter<NormalElementComponent>()
+                                           .Include<ElementComponent>()
+                                           .Exclude<RandomGeneratedTag>() // 排除第一梯队
+                                           .End();
+
+                foreach (var entity in allNormalFilter)
+                {
+                    fallbackCandidates.Add(entity);
+                }
+            }
+
+            // --- 3. 分配位置 ---
+            primaryCandidates.Shuffle();
+            if (fallbackCandidates != null) fallbackCandidates.Shuffle();
+
+            int allocatedCount = 0;
+            int totalNeeded = itemsToSpawn.Count;
+
+            // A. 先从第一梯队分配
+            for (int i = 0; i < primaryCandidates.Count; i++)
+            {
+                if (allocatedCount >= totalNeeded) break;
+                
+                result.Add(primaryCandidates[i], itemsToSpawn[allocatedCount]);
+                allocatedCount++;
+            }
+
+            // B. 如果不够，从第二梯队分配
+            if (allocatedCount < totalNeeded && fallbackCandidates != null)
+            {
+                for (int i = 0; i < fallbackCandidates.Count; i++)
+                {
+                    if (allocatedCount >= totalNeeded) break;
+
+                    result.Add(fallbackCandidates[i], itemsToSpawn[allocatedCount]);
+                    allocatedCount++;
+                }
+            }
+
+            return result;
+        }
+        
         /// <summary>
         /// 检查指定位置的四个方向是否有匹配的棋子
         /// </summary>
@@ -540,3 +696,4 @@ namespace Hotfix.Logic.GamePlay
         }
     }
 }
+       

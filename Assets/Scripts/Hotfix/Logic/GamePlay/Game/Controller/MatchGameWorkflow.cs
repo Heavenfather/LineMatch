@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using GameCore.Log;
 using HotfixCore.MemoryPool;
 using HotfixCore.Module;
@@ -25,6 +26,8 @@ namespace Hotfix.Logic.GamePlay
 
         public void Initialize()
         {
+            DOTween.SetTweensCapacity(500, 325);
+            
             _workflowStateMachine = new StateMachine<GameStateContext>();
             _gameStateContext = new GameStateContext();
             _gameStateContext.SceneView = new GamePlaySceneView();

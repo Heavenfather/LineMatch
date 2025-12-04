@@ -932,6 +932,7 @@ namespace HotfixLogic
                     var num = _coinTargetObject.GetNum();
                     _coinTargetObject.UpdateNum(num + baseCoin);
                 }
+                _targetObjects.Add(_coinTargetObject);
             }
 
             text_left.text = LocalizationPool.Get("Common/Reward");

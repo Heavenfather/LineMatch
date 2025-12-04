@@ -97,6 +97,10 @@ namespace Hotfix.Logic.GamePlay
                         int configId = levelData.initColor[Random.Range(0, levelData.initColor.Length)];
                         int entity = _elementFactory.CreateElementEntity(_context, _matchService, configId, x, y, 1, 1);
                         FillElementEntityToGrids(entity, x, y, 1, 1);
+                        
+                        // 标记为随机生成的棋子
+                        var randomTagPool = _world.GetPool<RandomGeneratedTag>();
+                        randomTagPool.Add(entity);
                     }
                 }
             }

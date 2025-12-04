@@ -41,14 +41,14 @@ namespace Hotfix.Logic.GamePlay
             MatchManager.Instance.AddScore(stepScore);
             MatchManager.Instance.TickScoreChange();
 
-            //结算切换金币目标
-            LevelTargetSystem.Instance.AddTarget((int)ElementIdConst.Coin, 0);
 
             var baseCoin = MatchManager.Instance.GetBaseCoin(_gameStateContext.CurrentLevel.difficulty);
             if (MatchManager.Instance.GetLevelStar(MatchManager.Instance.CurLevelID) != 0)
             {
                 baseCoin = 0;
             }
+            //结算切换金币目标
+            LevelTargetSystem.Instance.AddTarget((int)ElementIdConst.Coin, baseCoin);
 
             _matchMainWindow.SwitchTargetToCoin(baseCoin);
             DelayShowWinFinish().Forget();
@@ -66,13 +66,14 @@ namespace Hotfix.Logic.GamePlay
                         _matchMainWindow.TweenRemainStep(_gameStateContext.MatchStateContext.RemainStep);
                     }
 
-                    // G.EventModule.DispatchEvent(GameEventDefine.OnDoMatchStepJudge, EventThreeParam<int, Vector3, Vector2>.Create(_matchData.MoveStep, _window.GetStepWorldPosition(), _window.GetCoinScreenPosition()));
                     var entity = _gameStateContext.World.NewEntity();
                     EcsPool<GameSettlementComponent> pool = _gameStateContext.World.GetPool<GameSettlementComponent>();
                     ref var component = ref pool.Add(entity);
                     component.RemainStep = _gameStateContext.MatchStateContext.RemainStep;
                     component.StepTextWorldPos = _matchMainWindow.GetStepWorldPosition();
-                    component.CoinIconWorldPos = _matchMainWindow.GetCoinScreenPosition();
+                    // component.CoinIconWorldPos = _matchMainWindow.GetCoinScreenPosition();
+
+                    _gameStateContext.MatchStateContext.IsGameSettlement = true;
                 }).SetAutoKill(true);
             };
             G.UIModule.ShowUIAsync<MatchWinFinish>("", callback);

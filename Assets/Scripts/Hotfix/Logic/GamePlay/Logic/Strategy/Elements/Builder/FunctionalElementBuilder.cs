@@ -36,8 +36,8 @@ namespace Hotfix.Logic.GamePlay
             {
                 priority = 4;
                 ref var comp = ref world.GetPool<StarBombComponent>().Add(entity);
-                comp.StarDotBaseElementId =
-                    RandomInitColor(context.CurrentLevel.initColor, context.CurrentLevel.initColorRate);
+                comp.StarDotBaseElementId = RandomInitColor(context.CurrentLevel.initColor, context.CurrentLevel.initColorRate);
+                comp.IsColorDirty = true;
             }
             else if(config.elementType == ElementType.SearchDot)
             {
@@ -51,16 +51,25 @@ namespace Hotfix.Logic.GamePlay
             {
                 priority = 4;
                 world.GetPool<TowDotsColoredBallComponent>().Add(entity);
+                ref var variableColorCom = ref world.GetPool<VariableColorComponent>().Add(entity);
+                variableColorCom.IsColorDirty = false;
+                variableColorCom.IsCanFreezeConnect = true;
             }
             else if(config.elementType == ElementType.TowDotsBombDot)
             {
                 priority = 4;
                 world.GetPool<TowDotsBombDotComponent>().Add(entity);
+                ref var variableColorCom = ref world.GetPool<VariableColorComponent>().Add(entity);
+                variableColorCom.IsColorDirty = false;
+                variableColorCom.IsCanFreezeConnect = false;
             }
             else if(config.elementType == ElementType.HorizontalDot)
             {
                 priority = 4;
                 world.GetPool<HorizontalDotComponent>().Add(entity);
+                ref var variableColorCom = ref world.GetPool<VariableColorComponent>().Add(entity);
+                variableColorCom.IsColorDirty = false;
+                variableColorCom.IsCanFreezeConnect = false;
             }
             
             // 功能棋子打上特殊的标签

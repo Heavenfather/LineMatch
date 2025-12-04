@@ -110,5 +110,13 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         /// <returns></returns>
         bool HasPotentialMatch(EcsWorld world,List<ShuffleSystem.ShuffleNode> shuffleNodes);
+        
+        /// <summary>
+        /// 获取开局道具的最佳生成位置
+        /// </summary>
+        /// <param name="world">ECS世界</param>
+        /// <param name="itemsToSpawn">需要生成的道具配置ID列表</param>
+        /// <returns>字典：Key=目标被替换的实体ID, Value=要生成的道具ConfigId</returns>
+        Dictionary<int, int> GetBonusSpawnPositions(EcsWorld world, List<int> itemsToSpawn);
     }
 }
