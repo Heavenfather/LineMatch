@@ -16,6 +16,7 @@ namespace Hotfix.Logic.GamePlay
     public partial class MatchGameWorkflow : IGameWorkflow
     {
         private GameState _currentGameState = GameState.None;
+        public GameState CurrentGameState => _currentGameState;
 
         private StateMachine<GameStateContext> _workflowStateMachine;
         private GameStateContext _gameStateContext;
@@ -27,13 +28,13 @@ namespace Hotfix.Logic.GamePlay
         public void Initialize()
         {
             DOTween.SetTweensCapacity(500, 325);
-            
+
             _workflowStateMachine = new StateMachine<GameStateContext>();
             _gameStateContext = new GameStateContext();
             _gameStateContext.SceneView = new GamePlaySceneView();
             _gameStateContext.Board = new Board();
             _gameStateContext.MatchStateContext = new MatchStateContext();
-            
+
             _workflowStateMachine.Context = _gameStateContext;
             _workflowStateMachine.RegisterState(GameState.Initialize.ToString(), new GameInitializeState());
             _workflowStateMachine.RegisterState(GameState.Start.ToString(), new GameStartState());
@@ -44,7 +45,7 @@ namespace Hotfix.Logic.GamePlay
         }
 
         public EventDispatcher EventDispatcher => _eventDispatcher;
-        
+
 
         public T SetShare<T>(string key, T value)
         {
@@ -69,16 +70,17 @@ namespace Hotfix.Logic.GamePlay
                 Logger.Warning("GameWorkflow is working, can not start again");
                 return;
             }
-            
+
             _isWorking = true;
             _matchMainWindow = GetShare<MatchMainWindow>(GameWorkflowKey.MatchMainWindow);
             _gameStateContext.CurrentMatchType = GetShare<MatchServiceType>(GameWorkflowKey.MatchType);
             _gameStateContext.CurrentLevel = GetShare<LevelData>(GameWorkflowKey.LevelData);
             _gameStateContext.MatchStateContext.SetStep(_gameStateContext.CurrentLevel.stepLimit);
-            _gameStateContext.MatchMainWindow =_matchMainWindow;
-            _currentGameState = GameState.Initialize;
+            _gameStateContext.MatchMainWindow = _matchMainWindow;
             _eventDispatcher = MemoryPool.Acquire<EventDispatcher>();
             RegisterEvent();
+            _currentGameState = GameState.Initialize;
+            _gameStateContext.IsGameReStart = false;
             await _workflowStateMachine.StartMachine(GameState.Initialize.ToString());
         }
 
@@ -92,6 +94,7 @@ namespace Hotfix.Logic.GamePlay
 
             _currentGameState = gameState;
             await _workflowStateMachine.ChangeState(gameState.ToString());
+
             //切换状态，当做工作继续
             _isWorking = true;
         }
@@ -131,6 +134,5 @@ namespace Hotfix.Logic.GamePlay
                 _currentGameState = GameState.None;
             }).Forget();
         }
-        
     }
 }

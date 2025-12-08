@@ -11,7 +11,7 @@ namespace Hotfix.Logic.GamePlay
     {
         public ElementType TargetType => ElementType.Bomb;
         
-        public void Build(GameStateContext context, int entity, in ElementMap config)
+        public void Build(GameStateContext context, int entity, in ElementMap config,ElementBuildSource source)
         {
             var world = context.World;
             int priority = 0;
@@ -25,7 +25,10 @@ namespace Hotfix.Logic.GamePlay
             {
                 priority = 3;
                 ref var com = ref world.GetPool<BombComponent>().Add(entity);
-                com.AutoBomb = false;
+                if (context.CurrentMatchType == MatchServiceType.TowDots)
+                {
+                    world.GetPool<ElementCheckStableTag>().Add(entity);
+                }
             }
             else if(config.elementType == ElementType.ColorBall)
             {

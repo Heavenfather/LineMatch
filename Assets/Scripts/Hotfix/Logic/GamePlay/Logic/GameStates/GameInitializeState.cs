@@ -22,19 +22,25 @@ namespace Hotfix.Logic.GamePlay
 
         public async UniTask OnEnter(CancellationToken token)
         {
-            //加载游戏场景
-            await Context.SceneView.LoadScene();
-            //预加载游戏所用到的资源
-            var resourceProvider = MatchBoot.Container.Resolve<IElementResourceProvider>();
-            //对象池根节点
-            Transform poolRoot = Context.SceneView.GetSceneRootTransform("MatchCanvas", "EleRoot");
-            // 分析需要哪些资源
-            var requiredIds = resourceProvider.AnalyzeLevelRequiredElements(
-                Context.CurrentLevel,
-                Context.ServiceFactory.GetService(Context.CurrentMatchType));
-            // 执行预加载
-            await resourceProvider.PreloadResources(requiredIds, poolRoot);
-            
+            if (Context.IsGameReStart == false)
+            {
+                //加载游戏场景
+                await Context.SceneView.LoadScene();
+                //预加载游戏所用到的资源
+                var resourceProvider = MatchBoot.Container.Resolve<IElementResourceProvider>();
+                //对象池根节点
+                Transform poolRoot = Context.SceneView.GetSceneRootTransform("MatchCanvas", "EleRoot");
+                // 分析需要哪些资源
+                var requiredIds = resourceProvider.AnalyzeLevelRequiredElements(
+                    Context.CurrentLevel,
+                    Context.ServiceFactory.GetService(Context.CurrentMatchType));
+                // 执行预加载
+                await resourceProvider.PreloadResources(requiredIds, poolRoot);
+
+                // 初始化收集道具服务
+                InitializeCollectItemService();
+            }
+
             RegisterEcsWorld();
         }
 
@@ -42,7 +48,7 @@ namespace Hotfix.Logic.GamePlay
         {
             this.Context.Systems.Init();
             //场景加载完成后进入开始阶段
-            await StateMachine.ChangeState(GameState.Start.ToString());
+            await MatchBoot.GameWorkflow.ChangeGameState(GameState.Start);
         }
 
         public async UniTask OnExit(CancellationToken token)
@@ -81,8 +87,6 @@ namespace Hotfix.Logic.GamePlay
             _systems = new EcsSystems(_world, Context);
             Context.Systems = _systems;
             
-            // 初始化收集道具服务
-            InitializeCollectItemService();
             _systems
                 // !!!!!!!!!! 添加的顺序影响着每个系统的初始化逻辑和更新的先后顺序，谨慎思考添加顺序 !!!!!!!!!!
                 // 棋盘生命周期
@@ -103,12 +107,15 @@ namespace Hotfix.Logic.GamePlay
                 // ----------- 消除匹配逻辑 这里一定要弄清楚消除的顺序 -------------------------
                 .Add(new MatchAnalysisSystem()) //消除分析
                 .Add(new ActionExecutionSystem()) //消除执行
+                .Add(new AdjacentEliminationSystem()) //通用旁消特性处理
+                .Add(new MultiLayerElementSystem()) //通用多层元素处理
                 // ---------- 不同类型棋子处理 各种棋子对消除执行的反应 ----------------
+                .Add(new SpreadWaterSystem())
+                .Add(new SpreadWaterVisualSystem())
                 .Add(new LockVisualSystem())
                 .Add(new RocketSystem())
                 .Add(new BombSystem())
                 .Add(new TargetElementSystem())
-                .Add(new BackgroundElementSystem())
                 .Add(new BombElementSystem())
                 .Add(new SearchDotsSystem())
                 .Add(new StarBombSystem())
@@ -116,13 +123,17 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new HorizontalDotSystem())
                 .Add(new TowDotsBombDotSystem())
                 .Add(new TowDotsColoredBallSystem())
-
+                .Add(new DropStyleElementSystem())
+                .Add(new SpreadFireSystem())
+                .Add(new BlockElementSystem())
+                
                 // Normal需要排在最后，因为其它棋子可能需要对它进行处理
                 .Add(new NormalElementSystem())
                 .Add(new CollectItemFlySystem())// 收集道具飞行系统
                 //------- 各个棋子处理完成格子逻辑 统一交由 ElementDestroySystem 执行回收 -------------
                 .Add(new ElementDestroySystem()) // 元素消除
-                .Add(new ProjectileSystem()) //生成新的棋子
+                
+
                 .Add(new DropAnalysisSystem()) //处理掉落,分析和生产掉落数据
                 .Add(new DropElementSpawnSystem()) //掉落元素生成
                 .Add(new DropElementAnimationSystem()) //掉落元素动画
@@ -132,6 +143,11 @@ namespace Hotfix.Logic.GamePlay
                 .Add(new ShuffleAnimationSystem())
                 .Add(new GameResultCheckSystem())
                 .Add(new GameSettlementSystem())
+                
+#if UNITY_EDITOR
+                .Add (new Hotfix.Logic.GamePlay.Debugger.EcsWorldDebugSystem ())
+                .Add (new Hotfix.Logic.GamePlay.Debugger.EcsSystemsDebugSystem ())
+#endif
                 ;
         }
     }

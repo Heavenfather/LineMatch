@@ -80,6 +80,7 @@ namespace Hotfix.Logic.GamePlay
                         _context,
                         _matchService,
                         configId,
+                        ElementBuildSource.Dynamic,
                         req.Column,
                         row, 1, 1 //暂时只支持1x1的元素掉落，如果后面有需要再来支持
                     );

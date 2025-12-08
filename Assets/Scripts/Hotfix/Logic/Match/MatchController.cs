@@ -75,9 +75,7 @@ namespace HotfixLogic
             Dispatcher.AddEventListener<EventOneParam<Color>>(GameEventDefine.OnMatchUpdateLinkColor, OnMatchUpdateLinkColor, this);
 
             InitData();
-            if (_matchData.EnterLevelType == MatchLevelType.C || (_matchData.EnterLevelType == MatchLevelType.Editor &&
-                                                                  MatchManager.Instance.CurrentMatchGameType ==
-                                                                  MatchGameType.TowDots))
+            if (MatchManager.Instance.IsEnterNewEcsWork())
             {
                 _itemsId = new int[] { 1108, 1107, 1111, 1130 };
             }
@@ -331,8 +329,12 @@ namespace HotfixLogic
                     _matchData.Restart(levelData);
                     InitData();
                     _window.Restart();
-                    _window.UpdateLv();
-                    await MatchManager.Instance.Restart();
+                    
+                    _window.RefreshStep(levelData.stepLimit);
+                    if (MatchManager.Instance.IsEnterNewEcsWork())
+                        await MatchBoot.GameWorkflow.ChangeGameState(GameState.Restart);
+                    else
+                        await MatchManager.Instance.Restart();
                     G.EventModule.DispatchEvent(GameEventDefine.OnMatchRestartComplete);
                     Module.CloseCurrentWindow();
                 }).Forget();
@@ -577,13 +579,8 @@ namespace HotfixLogic
         private async UniTask EnterMatch()
         {
             //先这样兼容旧的系统，后面全面重构完后，就只有一个入口了
-            bool isEnterNewBoot = false;
-            var levelType = MatchManager.Instance.CurrentMatchLevelType;
-            if (levelType == MatchLevelType.C || levelType == MatchLevelType.Editor)
-            {
-                isEnterNewBoot = levelType != MatchLevelType.Editor || MatchManager.Instance.CurrentMatchGameType == MatchGameType.TowDots;
-            }
-            if (isEnterNewBoot)
+            // bool isEnterNewBoot = false;
+            if (MatchManager.Instance.IsEnterNewEcsWork())
             {
                 await MatchBoot.BootStart(_matchData.CurrentLevelData, MatchServiceType.TowDots, _window);
             }
@@ -712,17 +709,17 @@ namespace HotfixLogic
 
         protected override void OnDestroy()
         {
-            bool isEnterNewBoot = false;
-            var levelType = MatchManager.Instance.CurrentMatchLevelType;
-            if (levelType == MatchLevelType.C || levelType == MatchLevelType.Editor)
-            {
-                isEnterNewBoot = levelType != MatchLevelType.Editor || MatchManager.Instance.CurrentMatchGameType == MatchGameType.TowDots;
-            }
+            // bool isEnterNewBoot = false;
+            // var levelType = MatchManager.Instance.CurrentMatchLevelType;
+            // if (levelType == MatchLevelType.C || levelType == MatchLevelType.Editor)
+            // {
+            //     isEnterNewBoot = levelType != MatchLevelType.Editor || MatchManager.Instance.CurrentMatchGameType == MatchGameType.TowDots;
+            // }
             
-            if (isEnterNewBoot)
+            if (MatchManager.Instance.IsEnterNewEcsWork())
                 MatchBoot.BootExit();
             else
-                MatchManager.Instance.Quit();
+                MatchManager.Instance.Quit().Forget();
             G.UIModule.SetSceneCamera(null);
             DifficultyStrategyManager.Instance.SetCurrentUseItemState(false);
         }

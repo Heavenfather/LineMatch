@@ -15,19 +15,20 @@ namespace Hotfix.Logic.GamePlay
 
         // 用于判断棋盘是否忙碌
         private EcsFilter _boardSystemCheckFilter;
-
-        // 状态标记，防止重复触发结算
-        private bool _isResultTriggered = false;
+        private EcsFilter _roundFilter;
+        private EcsPool<RoundEndTag> _roundPool;
         
         // 上一次检查的结果，用于避免重复触发
         private ECheckMatchResult _lastResult = ECheckMatchResult.Actioning;
 
         public void Init(IEcsSystems systems)
         {
-            _isResultTriggered = false;
             _world = systems.GetWorld();
             _context = systems.GetShared<GameStateContext>();
             _matchContext = _context.MatchStateContext;
+
+            _roundFilter = _world.Filter<RoundEndTag>().End();
+            _roundPool = _world.GetPool<RoundEndTag>();
 
             // 初始化过滤器
             _boardSystemCheckFilter = _world.Filter<BoardStableCheckSystemTag>().End();
@@ -36,7 +37,7 @@ namespace Hotfix.Logic.GamePlay
         public void Run(IEcsSystems systems)
         {
             // 0. 如果已经结算过了，直接跳过
-            if (_isResultTriggered) 
+            if (_context.MatchStateContext.IsResultTriggered) 
                 return;
             
             // 1. 必须确保游戏处于空闲状态
@@ -45,6 +46,7 @@ namespace Hotfix.Logic.GamePlay
 
             // 2. 检查游戏结果
             var result = CheckResult();
+            OnRoundEnd();
             
             // 3. 如果结果发生变化，触发相应事件
             if (result != _lastResult)
@@ -52,6 +54,17 @@ namespace Hotfix.Logic.GamePlay
                 _lastResult = result;
                 HandleResultChange(result);
             }
+        }
+
+        private void OnRoundEnd()
+        {
+            if(_roundFilter.GetEntitiesCount() <= 0)
+                return;
+            foreach (var entity in _roundFilter)
+            {
+                _roundPool.Del(entity);
+            }
+            MatchManager.Instance.TickScoreChange();
         }
         
         /// <summary>
@@ -169,7 +182,7 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         private void OnGameSuccess()
         {
-            _isResultTriggered = true;
+            _context.MatchStateContext.IsResultTriggered = true;
             FreezeAllElement();
             // 触发成功事件
             G.EventModule.DispatchEvent(GameEventDefine.OnGameSuccess);
@@ -180,7 +193,7 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         private void OnGameFailure()
         {
-            _isResultTriggered = true;
+            _context.MatchStateContext.IsResultTriggered = true;
             // 触发失败事件
             G.EventModule.DispatchEvent(GameEventDefine.OnGameFailure, EventOneParam<bool>.Create(false));
         }

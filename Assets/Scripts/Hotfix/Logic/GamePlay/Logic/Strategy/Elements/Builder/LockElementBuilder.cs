@@ -6,7 +6,7 @@ namespace Hotfix.Logic.GamePlay
     {
         public ElementType TargetType => ElementType.Lock;
 
-        public void Build(GameStateContext context, int entity, in ElementMap config)
+        public void Build(GameStateContext context, int entity, in ElementMap config,ElementBuildSource source)
         {
             var world = context.World;
             var pool = world.GetPool<LockComponent>();

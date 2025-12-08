@@ -20,13 +20,10 @@ namespace HotfixLogic.Match
 
         private List<Vector2Int> _neighborPos = new List<Vector2Int>();
 
-        void Start()
-        {
-
-        }
-
         public void SetGridPos(Vector2Int gridPos)
         {
+            if(_neighborPos.Count > 0)
+                return;
             _gridPos = gridPos;
             UpdateEightNeighborPos();
         }

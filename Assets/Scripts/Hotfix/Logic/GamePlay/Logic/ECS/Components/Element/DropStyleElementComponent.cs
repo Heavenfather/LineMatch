@@ -5,5 +5,6 @@
     /// </summary>
     public struct DropStyleElementComponent
     {
+        public bool IsCanBombDel;
     }
 }

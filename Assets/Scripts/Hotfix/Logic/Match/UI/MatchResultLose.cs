@@ -140,10 +140,11 @@ namespace HotfixLogic
         private void InitStepLayout()
         {
             var config = ConfigMemoryPool.Get<reviveRewardDB>()[_reviveLostCount];
+            string addItemStr = MatchManager.Instance.IsEnterNewEcsWork() ? config.addItemC : config.addItem;
 
-            if (config.addItem != "")
+            if (!string.IsNullOrEmpty(addItemStr))
             {
-                string[] res = config.addItem.Split('|');
+                string[] res = addItemStr.Split('|');
                 for (int i = 0; i < res.Length; i++)
                 {
                     string[] item = res[i].Split('*');
@@ -364,7 +365,7 @@ namespace HotfixLogic
             seq.Append(img_flyLive.transform.DOPath(path, 0.4f, PathType.CatmullRom).SetEase(Ease.InSine));
             seq.AppendCallback(() => { go_eff.SetActive(true); });
             seq.AppendInterval(0.2f);
-            seq.AppendCallback(() => { PlayAgain(); });
+            seq.AppendCallback(PlayAgain);
         }
 
         private void ReqBeginMatch()

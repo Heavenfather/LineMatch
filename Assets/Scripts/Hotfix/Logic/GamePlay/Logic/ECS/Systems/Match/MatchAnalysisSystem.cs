@@ -11,10 +11,12 @@ namespace Hotfix.Logic.GamePlay
         private EcsWorld _world;
         private MatchStateContext _stateContext;
         private EcsFilter _requestFilter;
+        private EcsFilter _roundFilter;
         private EcsPool<MatchRequestComponent> _requestPool;
         private EcsPool<PendingActionsComponent> _pendingActionPool;
         private EcsPool<DropAnalysisComponent> _dropAnalysisPool;
         private EcsPool<ElementComponent> _elePool;
+        private EcsPool<RoundEndTag> _roundTag;
 
         private IMatchServiceFactory _matchServiceFactory;
         private IMatchService _matchService; // 当前关卡的消除服务
@@ -30,7 +32,9 @@ namespace Hotfix.Logic.GamePlay
 
             // 筛选所有 "消除请求"
             _requestFilter = _world.Filter<MatchRequestComponent>().End();
+            _roundFilter = _world.Filter<RoundEndTag>().End();
 
+            _roundTag = _world.GetPool<RoundEndTag>();
             _elePool = _world.GetPool<ElementComponent>();
             _requestPool = _world.GetPool<MatchRequestComponent>();
             _pendingActionPool = _world.GetPool<PendingActionsComponent>();
@@ -48,6 +52,7 @@ namespace Hotfix.Logic.GamePlay
             foreach (var entity in _requestFilter)
             {
                 ref var req = ref _requestPool.Get(entity);
+                OnRoundEnd(req.Type);
 
                 // 是否是玩家主动执行的操作
                 bool isPlayerMove =
@@ -111,6 +116,20 @@ namespace Hotfix.Logic.GamePlay
                     // InputSystem 会忽略非 Idle 的棋子
                     state.LogicState = ElementLogicalState.Matching;
                 }
+            }
+        }
+
+        private void OnRoundEnd(MatchRequestType type)
+        {
+            if (_roundFilter.GetEntitiesCount() > 0)
+                return;
+            // 主动操作才是回合开始标签
+            if (type == MatchRequestType.PlayerLine || type == MatchRequestType.PlayerSquare ||
+                type == MatchRequestType.UseItem)
+            {
+                int roundEntity = _world.NewEntity();
+                ref var roundTag = ref _roundTag.Add(roundEntity);
+                roundTag.RoundStartType = type;
             }
         }
 

@@ -1,10 +1,7 @@
 ﻿namespace Hotfix.Logic.GamePlay
 {
-    /// <summary>
-    /// 背景类型元素组件
-    /// </summary>
+    //背景类型元素组件（标识组件）
     public struct BackgroundComponent
     {
-        
     }
 }

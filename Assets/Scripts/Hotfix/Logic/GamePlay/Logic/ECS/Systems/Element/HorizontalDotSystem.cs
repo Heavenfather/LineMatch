@@ -40,7 +40,7 @@ namespace Hotfix.Logic.GamePlay
                 if (_eliminatePool.Has(entity) && _variableColorPool.Has(entity))
                 {
                     ref var variableColorCom = ref _variableColorPool.Get(entity);
-                    _eliminatePool.Del(entity);
+                    // _eliminatePool.Del(entity);
                     if (variableColorCom.CurrentColorId == 0)
                     {
                         //直接消掉，无效果

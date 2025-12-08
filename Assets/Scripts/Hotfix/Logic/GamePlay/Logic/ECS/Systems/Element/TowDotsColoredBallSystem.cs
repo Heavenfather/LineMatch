@@ -14,7 +14,6 @@ namespace Hotfix.Logic.GamePlay
         private EcsWorld _world;
         private EcsFilter _filter;
         private TrailEmitter _trailEmitter;
-        private EcsPool<EliminatedTag> _eliminatePool;
         private IElementFactoryService _elementService;
         private EcsPool<ElementPositionComponent> _positionPool;
         private EcsPool<TowDotsColoredBallComponent> _coloredBallPool;
@@ -31,11 +30,10 @@ namespace Hotfix.Logic.GamePlay
             _trailEmitter = context.SceneView.GetSceneRootComponent<TrailEmitter>("MatchCanvas", "GridBoard");
             _world = systems.GetWorld();
             _filter = _world.Filter<ElementRenderComponent>().Include<TowDotsColoredBallComponent>()
-                .Include<VariableColorComponent>().End();
+                .Include<VariableColorComponent>().Include<EliminatedTag>().End();
 
             _targetEntities = new List<int>();
             _coloredBallPool = _world.GetPool<TowDotsColoredBallComponent>();
-            _eliminatePool = _world.GetPool<EliminatedTag>();
             _positionPool = _world.GetPool<ElementPositionComponent>();
             _pendingActionsPool = _world.GetPool<PendingActionsComponent>();
             _busyPool = _world.GetPool<VisualBusyComponent>();
@@ -47,38 +45,35 @@ namespace Hotfix.Logic.GamePlay
             {
                 if (!_world.IsEntityAliveInternal(entity))
                     continue;
-                // 处理消除标签
-                if (_eliminatePool.Has(entity))
+                if (_busyPool.Has(entity))
+                    return;
+                _busyPool.Add(entity);
+
+                ref var com = ref _coloredBallPool.Get(entity);
+                if (com.CollectedEntities != null && com.CollectedEntities.Count > 0)
                 {
-                    _eliminatePool.Del(entity);
-                    _busyPool.Add(entity);
+                    // 发射效果飞向消除点
+                    _targetEntities.Clear();
+                    ref var positionCom = ref _positionPool.Get(entity);
+                    Vector3 startPos = positionCom.WorldPosition;
+                    List<Vector3> targetPositions = new List<Vector3>(com.CollectedEntities.Count);
 
-                    ref var com = ref _coloredBallPool.Get(entity);
-                    if (com.CollectedEntities != null && com.CollectedEntities.Count > 0)
+                    foreach (var targetEntity in com.CollectedEntities)
                     {
-                        // 发射效果飞向消除点
-                        _targetEntities.Clear();
-                        ref var positionCom = ref _positionPool.Get(entity);
-                        Vector3 startPos = positionCom.WorldPosition;
-                        List<Vector3> targetPositions = new List<Vector3>(com.CollectedEntities.Count);
-
-                        foreach (var targetEntity in com.CollectedEntities)
+                        if (_world.IsEntityAliveInternal(targetEntity) && _positionPool.Has(targetEntity))
                         {
-                            if (_world.IsEntityAliveInternal(targetEntity))
-                            {
-                                _targetEntities.Add(targetEntity);
-                                ref var position = ref _positionPool.Get(targetEntity);
-                                targetPositions.Add(position.WorldPosition);
-                            }
+                            _targetEntities.Add(targetEntity);
+                            ref var position = ref _positionPool.Get(targetEntity);
+                            targetPositions.Add(position.WorldPosition);
                         }
+                    }
 
-                        _trailEmitter.Emitter(startPos, targetPositions, OnEmitterStepComplete,
-                            () => DelayDestroySelf(entity, 0.3f).Forget());
-                    }
-                    else
-                    {
-                        DelayDestroySelf(entity, 0).Forget();
-                    }
+                    _trailEmitter.Emitter(startPos, targetPositions, OnEmitterStepComplete,
+                        () => DelayDestroySelf(entity, 0.3f).Forget());
+                }
+                else
+                {
+                    DelayDestroySelf(entity, 0).Forget();
                 }
             }
         }
@@ -88,7 +83,7 @@ namespace Hotfix.Logic.GamePlay
             List<AtomicAction> actions = new List<AtomicAction>();
 
             int entity = _targetEntities[index];
-            if(!_world.IsEntityAliveInternal(entity))
+            if (!_world.IsEntityAliveInternal(entity))
                 return;
             ref var position = ref _positionPool.Get(entity);
             actions.Add(new AtomicAction()
@@ -109,7 +104,6 @@ namespace Hotfix.Logic.GamePlay
             await UniTask.Delay(TimeSpan.FromSeconds(delay));
             // 延迟销毁，给动画播放时间
             _elementService.AddDestroyElementTag2Entity(_world, entity);
-            _busyPool.Del(entity);
         }
     }
 }

@@ -519,7 +519,6 @@ namespace HotfixLogic
             _isCalculateCoinState = false;
             PlaySpine(MatchConst.SPINE_IDLE);
             InitStarScore();
-            RefreshStep(_data.MoveStep);
             ResetItem();
 
             ResetReportData();
@@ -780,7 +779,7 @@ namespace HotfixLogic
             AudioUtil.PlaySound("audio/match/collect_star");
         }
 
-        private void RefreshStep(int remainStep)
+        public void RefreshStep(int remainStep)
         {
             text_step.text = remainStep > 0 ? remainStep.ToString() : "0";
 
@@ -805,6 +804,18 @@ namespace HotfixLogic
                 
         }
 
+        public Vector3 GetTargetObjectScreenPos(int elementId)
+        {
+            var target = FindTargetObject(elementId);
+            if (target != null)
+            {
+                var screenPoint = G.UIModule.GetUIScreenPos(target.transform.position);
+                return screenPoint;
+            }
+
+            return Vector3.zero;
+        }
+        
         private GameObject FindTargetObject(int elementId)
         {
             if (_isCalculateCoinState)

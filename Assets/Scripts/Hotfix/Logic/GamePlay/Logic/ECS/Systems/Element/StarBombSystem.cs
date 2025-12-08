@@ -53,7 +53,7 @@ namespace Hotfix.Logic.GamePlay
                 // 处理消除标签
                 if (_eliminatePool.Has(entity))
                 {
-                    _eliminatePool.Del(entity);
+                    // _eliminatePool.Del(entity);
 
                     ref var positionCom = ref _positionPool.Get(entity);
 

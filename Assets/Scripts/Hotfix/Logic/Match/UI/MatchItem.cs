@@ -69,6 +69,8 @@ namespace HotfixLogic
 
         public void RefreshNum()
         {
+            if (_itemId == 0) return;
+
             int itemNum = G.GameItemModule.GetItemCount(_itemId);
 
             if (GuideManager.Instance.IsGuiding())

@@ -12,18 +12,24 @@ namespace Hotfix.Logic.GamePlay
         /// </summary>
         /// <param name="strategy"></param>
         void SetSpawnStrategy(IBoardSpawnStrategy strategy);
-        
+
         /// <summary>
         /// 创建元素实体
         /// </summary>
         /// <returns></returns>
-        int CreateElementEntity(GameStateContext context,IMatchService matchService, int configId, int x, int y, int width, int height);
+        int CreateElementEntity(GameStateContext context, IMatchService matchService, int configId,
+            ElementBuildSource source, int x, int y, int width, int height);
 
         /// <summary>
         /// 当元素被爆到时，它能否被选中做销毁操作
         /// </summary>
         /// <returns></returns>
-        bool IsElementCanSelected(ElementType elementType,EcsWorld world, int elementEntity);
+        bool IsElementCanSelected(ElementType elementType, EcsWorld world, int elementEntity);
+
+        /// <summary>
+        /// 统一由该函数为元素添加上消除标记
+        /// </summary>
+        void AddEliminateTag2Entity(EcsWorld word, int entity, int count, EliminateReason reason);
 
         /// <summary>
         /// 统一由该函数为元素添加上销毁标记

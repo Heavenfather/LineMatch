@@ -118,5 +118,13 @@ namespace Hotfix.Logic.GamePlay
         /// <param name="itemsToSpawn">需要生成的道具配置ID列表</param>
         /// <returns>字典：Key=目标被替换的实体ID, Value=要生成的道具ConfigId</returns>
         Dictionary<int, int> GetBonusSpawnPositions(EcsWorld world, List<int> itemsToSpawn);
+
+        /// <summary>
+        /// 获取游戏继续道具的最佳生成位置
+        /// </summary>
+        /// <param name="world"></param>
+        /// <param name="itemsToSpawn"></param>
+        /// <returns></returns>
+        Dictionary<Vector2Int, int> GetGameContinueBestApplyPositions(EcsWorld world, List<int> itemsToSpawn);
     }
 }

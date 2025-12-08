@@ -3,6 +3,17 @@
 namespace Hotfix.Logic.GamePlay
 {
     /// <summary>
+    /// 元素构建源
+    /// </summary>
+    public enum ElementBuildSource
+    {
+        // 关卡配置
+        Config,
+        // 动态生成
+        Dynamic
+    }
+    
+    /// <summary>
     /// 元素构建器接口：负责为特定类型的元素添加额外的组件
     /// 消除元素组件膨胀的问题
     /// </summary>
@@ -16,7 +27,7 @@ namespace Hotfix.Logic.GamePlay
         /// <summary>
         /// 执行构建
         /// </summary>
-        void Build(GameStateContext context, int entity, in ElementMap config);
+        void Build(GameStateContext context, int entity, in ElementMap config,ElementBuildSource source);
 
         /// <summary>
         /// 当元素被爆到时，它能否被选中做销毁操作

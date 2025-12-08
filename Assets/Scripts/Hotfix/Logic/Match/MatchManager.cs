@@ -114,6 +114,12 @@ namespace HotfixLogic.Match
             return _currentMatchLevelType == MatchLevelType.Editor;
         }
 
+        public bool IsEnterNewEcsWork()
+        {
+            return CurrentMatchLevelType == MatchLevelType.C || (CurrentMatchLevelType == MatchLevelType.Editor &&
+                                                                 CurrentMatchGameType == MatchGameType.TowDots);
+        }
+
         public void SetLevelType(MatchLevelType levelType)
         {
             _currentMatchLevelType = levelType;
@@ -176,15 +182,26 @@ namespace HotfixLogic.Match
 
         public async UniTask Restart(bool isRestart = true)
         {
-            await ClearData(isRestart);
+            if (_gridSystem != null)
+            {
+                await _gridSystem.Restart();
+            }
+            ClearData();
         }
 
         /// <summary>
         /// 退出关卡
         /// </summary>
-        public void Quit()
+        public async UniTask Quit()
         {
-            ClearData(false).Forget();
+            ClearData();
+            if (_gridSystem != null)
+            {
+                //清空池子
+                await ElementObjectPool.Instance.ClearAllPool();
+                await _gridSystem.Clear();
+            }
+
             G.SceneModule.UnloadAsync(MatchSceneLocation, () =>
             {
                 // G.UIModule.SetSceneCamera(null);
@@ -364,22 +381,11 @@ namespace HotfixLogic.Match
             _hadAdvRevive = hadAdvRevive;
         }
         
-        public async UniTask ClearData(bool isRestart)
+        public void ClearData()
         {
             _lostCount = 0;
             _totalScore = 0;
             _hadAdvRevive = false;
-            if (_gridSystem != null)
-            {
-                if(isRestart)
-                    await _gridSystem.Restart();
-                else
-                {
-                    //清空池子
-                    await ElementObjectPool.Instance.ClearAllPool();
-                    await _gridSystem.Clear();
-                }
-            }
             _matchElementId = 1;
             TaskManager.Instance.ClearTaskCalculate();
         }

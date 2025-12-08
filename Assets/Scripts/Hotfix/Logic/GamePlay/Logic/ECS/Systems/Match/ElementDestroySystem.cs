@@ -29,7 +29,7 @@ namespace Hotfix.Logic.GamePlay
             _board = _context.Board;
             _world = systems.GetWorld();
             _elementMap = ConfigMemoryPool.Get<ElementMapDB>();
-            _destroyFilter = _world.Filter<DestroyElementTagComponent>().Include<ElementComponent>().End();
+            _destroyFilter = _world.Filter<DestroyElementTagComponent>().Include<ElementComponent>().Include<EliminatedTag>().End();
             _destroyPool = _world.GetPool<DestroyElementTagComponent>();
             _elementPool = _world.GetPool<ElementComponent>();
             _posPool = _world.GetPool<ElementPositionComponent>();
@@ -42,19 +42,28 @@ namespace Hotfix.Logic.GamePlay
         public void Run(IEcsSystems systems)
         {
             bool hasAnyDestroy = false;
-            if(_destroyedElementMap.Count > 0)
+            if (_destroyedElementMap.Count > 0)
                 _destroyedElementMap.Clear();
             foreach (var entity in _destroyFilter)
             {
+                if(!_world.IsEntityAliveInternal(entity))
+                    continue;
+                
                 hasAnyDestroy = true;
+                
+                // 收集被消除的格子坐标（用于水蔓延）
+                if (_posPool.Has(entity))
+                {
+                    ref var pos = ref _posPool.Get(entity);
+                    _context.MatchStateContext.RoundEliminateCoords.Add(new Vector2Int(pos.X, pos.Y));
+                }
+                
                 // 1. 播放通用死亡特效 (差异化的表现由 ActionExecutionSystem 预先处理)
                 // 这里只播最基础的 如有飘字什么的
                 PlayCommonDestroyEffect(entity);
                 
                 // 2.从格子中移除
                 RemoveFromGrid(entity);
-                // 3.保底卷帘类型的障碍物收集处理? 这一部分已经在 ActionExecutionSystem 中处理
-                // CheckCollection(entity);
                 
                 // 4. 回收 View (GameObject)
                 RecycleView(entity);
@@ -64,6 +73,7 @@ namespace Hotfix.Logic.GamePlay
                 CalculateDelElement(eleCom.ConfigId);
                 AddBlockScore(eleCom.ConfigId);
                 CalculateCoin();
+                
                 // 6. 彻底销毁 ECS 实体
                 _world.DelEntity(entity);
             }
@@ -74,9 +84,57 @@ namespace Hotfix.Logic.GamePlay
                 _board.IsBoardDirty = true;
 
                 LevelTargetSystem.Instance.CalculateTarget(_destroyedElementMap);
+                
+                // 7. 触发水蔓延检测
+                TriggerWaterSpread(_context.MatchStateContext.RoundEliminateCoords);
             }
         }
 
+        /// <summary>
+        /// 触发水蔓延检测
+        /// </summary>
+        private void TriggerWaterSpread(HashSet<Vector2Int> eliminatedCoords)
+        {
+            if (eliminatedCoords == null || eliminatedCoords.Count == 0)
+                return;
+
+            // 检查是否有水元素
+            var waterPool = _world.GetPool<SpreadWaterComponent>();
+            bool hasWater = false;
+
+            // 简单检查：遍历所有水实体
+            var waterFilter = _world.Filter<SpreadWaterComponent>().End();
+            foreach (var waterEntity in waterFilter)
+            {
+                hasWater = true;
+                break;
+            }
+
+            if (!hasWater)
+                return;
+
+            // 获取水的配置ID
+            int waterConfigId = 0;
+            foreach (var waterEntity in waterFilter)
+            {
+                ref var water = ref waterPool.Get(waterEntity);
+                waterConfigId = water.WaterConfigId;
+                break;
+            }
+
+            if (waterConfigId == 0)
+                return;
+
+            // 创建水蔓延请求
+            int spreadEntity = _world.NewEntity();
+            var spreadPool = _world.GetPool<SpreadWaterSpreadComponent>();
+            ref var spread = ref spreadPool.Add(spreadEntity);
+            spread.EliminatedCoords = new List<Vector2Int>(eliminatedCoords);
+            spread.WaterConfigId = waterConfigId;
+            spread.IsProcessed = false;
+            spread.NeedFlowAnimation = true;
+        }
+        
         private void RemoveFromGrid(int entity)
         {
             // 1. 获取棋子位置
@@ -123,14 +181,14 @@ namespace Hotfix.Logic.GamePlay
 
         private void CalculateCoin()
         {
-            if(!_context.MatchStateContext.IsGameSettlement)
+            if (!_context.MatchStateContext.IsGameSettlement)
                 return;
             if (_destroyedElementMap.ContainsKey((int)ElementIdConst.Coin))
                 _destroyedElementMap[(int)ElementIdConst.Coin] += 1;
             else
                 _destroyedElementMap.Add((int)ElementIdConst.Coin, 1);
         }
-        
+
         private void RecycleView(int entity)
         {
             if (_renderPool.Has(entity))

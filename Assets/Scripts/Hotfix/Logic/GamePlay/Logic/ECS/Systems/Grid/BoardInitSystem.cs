@@ -82,7 +82,7 @@ namespace Hotfix.Logic.GamePlay
 
                                 // 创建实体
                                 int entity = _elementFactory.CreateElementEntity(_context, _matchService,
-                                    info.ElementId,
+                                    info.ElementId,ElementBuildSource.Config,
                                     x, y, width, height);
 
                                 // 将实体ID填入它占据的所有格子中
@@ -95,7 +95,7 @@ namespace Hotfix.Logic.GamePlay
                     if (IsCellEmpty(x, y))
                     {
                         int configId = levelData.initColor[Random.Range(0, levelData.initColor.Length)];
-                        int entity = _elementFactory.CreateElementEntity(_context, _matchService, configId, x, y, 1, 1);
+                        int entity = _elementFactory.CreateElementEntity(_context, _matchService, configId,ElementBuildSource.Config, x, y, 1, 1);
                         FillElementEntityToGrids(entity, x, y, 1, 1);
                         
                         // 标记为随机生成的棋子
@@ -205,7 +205,7 @@ namespace Hotfix.Logic.GamePlay
                 if (dropQuota < 0) dropQuota = 0;
 
                 // 4. 记录配额
-                if (!quotas.ContainsKey(targetId))
+                if (!quotas.ContainsKey(targetId) && db[targetId].elementType == ElementType.DropBlock)
                 {
                     quotas.Add(targetId, dropQuota);
                 }

@@ -384,7 +384,17 @@ namespace Hotfix.Logic.GamePlay
             // 需要参考GridSystem里面的 OnMatchUpdateSpecialElements 函数，满足那里面的需求 TODO...
             return result;
         }
-        
+
+        public Dictionary<Vector2Int, int> GetGameContinueBestApplyPositions(EcsWorld world, List<int> itemsToSpawn)
+        {
+            // 需要参考GridSystem里面的 OnMatchUpdateSpecialElements 函数，满足那里面的需求 TODO...
+            Dictionary<Vector2Int, int> result = new Dictionary<Vector2Int, int>();
+            if (itemsToSpawn == null || itemsToSpawn.Count == 0) return result;
+
+            // 需要参考GridSystem里面的 OnMatchUpdateSpecialElements 函数，满足那里面的需求 TODO...
+            return result;
+        }
+
         private GenItemData GenElementData(List<Vector2Int> closedLoop, out bool result, out OneTakeScoreType scoreType)
         {
             result = true;

@@ -105,6 +105,15 @@ namespace HotfixLogic.Match
             TickTargetChangedNum();
         }
 
+        public void ResumeTarget(int targetId, int count)
+        {
+            if (_targetElements.ContainsKey(targetId))
+            {
+                _targetElements[targetId] -= count;
+            }
+            TickTargetChangedNum();
+        }
+
         /// <summary>
         /// 目标是否已完成
         /// </summary>

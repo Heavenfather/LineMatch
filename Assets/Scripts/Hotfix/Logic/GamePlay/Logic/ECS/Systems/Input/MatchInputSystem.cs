@@ -213,6 +213,14 @@ namespace Hotfix.Logic.GamePlay
         {
             ref var grid = ref _gridPool.Get(gridEntity);
             if (grid.StackedEntityIds == null || grid.StackedEntityIds.Count == 0) return -1;
+            for (int i = grid.StackedEntityIds.Count - 1; i >= 0; i--)
+            {
+                ref var elementCom = ref _elePool.Get(grid.StackedEntityIds[i]);
+                if (elementCom.HoldGrid >= 1)
+                {
+                    return grid.StackedEntityIds[i];
+                }
+            }
             return grid.StackedEntityIds[^1];
         }
 
@@ -504,8 +512,8 @@ namespace Hotfix.Logic.GamePlay
             input.IsRectangle = false;
             input.LoopTargetEntityId = -1;
             _isVisualSquareState = false;
-
-            _context.MatchStateContext.RoundClear();
+            
+            _context.MatchStateContext.RoundEliminateCoords.Clear();
         }
 
         private bool IsNeighbor(int gridA, int gridB)

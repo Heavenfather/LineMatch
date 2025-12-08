@@ -24,8 +24,7 @@ namespace HotfixLogic
 
 		private void InitBoosterItem() {
 			var constConfig = ConfigMemoryPool.Get<ConstConfigDB>();
-			MatchLevelType matchLevelType = MatchManager.Instance.CurrentMatchLevelType;
-			var itemCfg = matchLevelType == MatchLevelType.C ? constConfig.GetConfigStrVal("MatchBeginItemC") : constConfig.GetConfigStrVal("MatchBeginItem");
+			var itemCfg = MatchManager.Instance.IsEnterNewEcsWork() ? constConfig.GetConfigStrVal("MatchBeginItemC") : constConfig.GetConfigStrVal("MatchBeginItem");
 			var itemID = itemCfg.Split('|');
 			for (int i = 0; i < itemID.Length; i++) {
 				var id = itemID[i];

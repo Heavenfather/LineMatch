@@ -61,7 +61,7 @@ namespace Hotfix.Logic.GamePlay
 
                 if (_eliminatePool.Has(entity))
                 {
-                    _eliminatePool.Del(entity);
+                    // _eliminatePool.Del(entity);
 
                     ref var searchCom = ref _searchDotPool.Get(entity);
                     ref var positionCom = ref _positionPool.Get(entity);

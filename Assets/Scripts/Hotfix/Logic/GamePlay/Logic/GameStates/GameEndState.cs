@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using Cysharp.Threading.Tasks;
+using HotfixLogic.Match;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -32,6 +33,8 @@ namespace Hotfix.Logic.GamePlay
             Context.Systems = null;
             Context.Board.Clear();
             Context.CurrentLevel = null;
+            
+            MatchManager.Instance.ClearData();
             
             // 安全卸载
             await ElementObjectPool.Instance.ClearAllPool(false);

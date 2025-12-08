@@ -6,7 +6,7 @@ namespace Hotfix.Logic.GamePlay
     {
         public ElementType TargetType => ElementType.Normal;
         
-        public void Build(GameStateContext context, int entity, in ElementMap config)
+        public void Build(GameStateContext context, int entity, in ElementMap config,ElementBuildSource source)
         {
             var world = context.World;
             // 添加普通元素特性

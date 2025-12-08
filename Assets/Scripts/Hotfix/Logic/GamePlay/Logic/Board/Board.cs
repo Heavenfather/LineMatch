@@ -109,6 +109,10 @@ namespace Hotfix.Logic.GamePlay
         public void Clear()
         {
             _boardEntities = null;
+            foreach (var go in _gameObjects)
+            {
+                UnityEngine.Object.Destroy(go);
+            }
             _gameObjects = null;
             _idx2HaveEntity.Clear();
         }

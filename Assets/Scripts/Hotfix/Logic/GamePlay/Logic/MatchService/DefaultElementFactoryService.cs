@@ -50,7 +50,7 @@ namespace Hotfix.Logic.GamePlay
             _spawnStrategy = strategy;
         }
 
-        public int CreateElementEntity(GameStateContext context, IMatchService matchService, int configId, int x, int y,
+        public int CreateElementEntity(GameStateContext context, IMatchService matchService, int configId,ElementBuildSource source, int x, int y,
             int width = 1, int height = 1)
         {
             EcsWorld world = context.World;
@@ -123,10 +123,19 @@ namespace Hotfix.Logic.GamePlay
             renderComp.IsSelected = false;
             renderComp.ViewInstance = null;
 
+            if (config.eliminateStyle == EliminateStyle.Side)
+            {
+                // 添加AdjacentEliminationComponent（支持旁消）
+                var adjacentPool = world.GetPool<AdjacentEliminationComponent>();
+                ref var adjacent = ref adjacentPool.Add(entity);
+                adjacent.OnlyFourDirections = true; // 目前只有检测四方向的需求
+                adjacent.IsTriggeredThisRound = false;
+            }
+
             // 添加特定的元素组件
             if (_builders.TryGetValue(ParseLinkElementType(config.elementType), out var builder))
             {
-                builder.Build(context, entity, config);
+                builder.Build(context, entity,in config, source);
             }
 
             return entity;
@@ -137,7 +146,27 @@ namespace Hotfix.Logic.GamePlay
             return _builders.TryGetValue(ParseLinkElementType(elementType), out var builder) &&
                    builder.IsElementCanSelectDelete(world, elementEntity);
         }
+        
+        public void AddEliminateTag2Entity(EcsWorld word, int entity, int count, EliminateReason reason)
+        {
+            var eliminateTagPool = word.GetPool<EliminatedTag>();
+            if (eliminateTagPool.Has(entity))
+            {
+                ref var eliminateTag = ref eliminateTagPool.Get(entity);
+                eliminateTag.EliminateCount += count;
+            }
+            else
+            {
+                ref var eliminateTag = ref eliminateTagPool.Add(entity);
+                eliminateTag.EliminateCount = count;
+                eliminateTag.Reason = reason;
+            }
 
+            var elementPool = word.GetPool<ElementComponent>();
+            ref var elementCom = ref elementPool.Get(entity);
+            elementCom.LogicState = ElementLogicalState.Acting;
+        }
+        
         public void AddDestroyElementTag2Entity(EcsWorld world, int entity)
         {
             var destroyTagPool = world.GetPool<DestroyElementTagComponent>();

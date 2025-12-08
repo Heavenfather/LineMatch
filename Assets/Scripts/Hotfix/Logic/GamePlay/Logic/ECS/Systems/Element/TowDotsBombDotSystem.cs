@@ -38,7 +38,7 @@ namespace Hotfix.Logic.GamePlay
                 // 处理消除标签
                 if (_eliminatePool.Has(entity))
                 {
-                    _eliminatePool.Del(entity);
+                    // _eliminatePool.Del(entity);
 
                     ref var variableColorCom = ref _variableColorPool.Get(entity);
                     if (variableColorCom.CurrentColorId == 0)

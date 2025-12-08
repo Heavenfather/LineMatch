@@ -13,6 +13,7 @@ namespace Hotfix.Logic.GamePlay
         private EcsPool<NormalElementComponent> _normalElementPool;
         private EcsPool<ElementRenderComponent> _elementRenderPool;
         private EcsPool<ElementComponent> _elementPool;
+        private EcsPool<EliminatedTag> _eliminatePool;
 
         public void Init(IEcsSystems systems)
         {
@@ -23,6 +24,7 @@ namespace Hotfix.Logic.GamePlay
             _normalElementPool = _world.GetPool<NormalElementComponent>();
             _elementRenderPool = _world.GetPool<ElementRenderComponent>();
             _elementPool = _world.GetPool<ElementComponent>();
+            _eliminatePool = _world.GetPool<EliminatedTag>();
         }
 
         public void Run(IEcsSystems systems)

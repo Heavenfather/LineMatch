@@ -14,6 +14,7 @@
         private EcsFilter _boardSystemCheckFilter;
         private EcsFilter _destroyTagFilter;
         private EcsFilter _shuffleFilter;
+        private EcsFilter _busyFilter;
 
         private EcsPool<ElementComponent> _elePool;
         private EcsPool<BoardStableCheckTag> _checkTagPool;
@@ -33,11 +34,11 @@
             _settlementFilter = _world.Filter<GameSettlementComponent>().End();
             _destroyTagFilter = _world.Filter<DestroyElementTagComponent>().End();
             _shuffleFilter = _world.Filter<ShuffleAnimationComponent>().End();
+            _busyFilter = _world.Filter<VisualBusyComponent>().End();
 
             // 筛选所有所有需要棋盘稳定后再执行的棋子 (排除掉已经有Tag的，防止重复添加)
-            // ------------ 为了避免给不必要的棋子添加Tag，就在这里指定所有需要添加Tag的元素 ------------
-            _elementFilter = _world.Filter<ElementComponent>().
-                Include<BombComponent>() //炸弹，在TowDots模式下需要自动爆
+            _elementFilter = _world.Filter<ElementComponent>()
+                .Include<ElementCheckStableTag>()
                 .Exclude<BoardStableCheckTag>() // 如果已经有Tag就不重复加
                 .End();
         }
@@ -49,7 +50,8 @@
                 _requestFilter.GetEntitiesCount() > 0 ||
                 _settlementFilter.GetEntitiesCount() > 0 ||
                 _destroyTagFilter.GetEntitiesCount() > 0 ||
-                _shuffleFilter.GetEntitiesCount() > 0)
+                _shuffleFilter.GetEntitiesCount() > 0 ||
+                _busyFilter.GetEntitiesCount() > 0)
             {
                 RemoveStableTag();
                 return;

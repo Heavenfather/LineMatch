@@ -8,7 +8,7 @@ namespace Hotfix.Logic.GamePlay
     /// 开局道具应用系统
     /// 将开局道具和连胜奖励道具应用到棋盘上
     /// </summary>
-    public class BeginItemApplySystem : IEcsInitSystem,IEcsRunSystem
+    public class BeginItemApplySystem : IEcsInitSystem, IEcsRunSystem
     {
         private EcsWorld _world;
         private GameStateContext _context;
@@ -16,9 +16,11 @@ namespace Hotfix.Logic.GamePlay
         private IElementFactoryService _elementFactory;
         private IBoard _board;
 
+        private EcsFilter _resultItemsFilter;
         private EcsPool<GridCellComponent> _gridCellPool;
         private EcsPool<ElementComponent> _elementPool;
         private EcsPool<ElementPositionComponent> _positionPool;
+        private EcsPool<PendingActionsComponent> _pendingActionsPool;
 
         public void Init(IEcsSystems systems)
         {
@@ -28,21 +30,67 @@ namespace Hotfix.Logic.GamePlay
             _elementFactory = MatchBoot.Container.Resolve<IElementFactoryService>();
             _board = _context.Board;
 
+            _resultItemsFilter = _world.Filter<GameContinueRequestComponent>().End();
             _gridCellPool = _world.GetPool<GridCellComponent>();
             _elementPool = _world.GetPool<ElementComponent>();
             _positionPool = _world.GetPool<ElementPositionComponent>();
-            
+            _pendingActionsPool = _world.GetPool<PendingActionsComponent>();
+
             ApplyBonusItems();
         }
-        
+
 
         public void Run(IEcsSystems systems)
         {
             // 后面完善这个功能时，连胜道具生成的时机不一致，到时需要 新建一个实体 然后监听那个实体是否仍然存在再来执行连胜道具的展示
             // 现在就只在初始化的时候执行一遍
-            // 还有失败复活选择道具时，这里也要监测重新生成
+
+            // 复活道具
+            if (_resultItemsFilter.GetEntitiesCount() > 0)
+            {
+                foreach (var entity in _resultItemsFilter)
+                {
+                    ref var resultCom = ref _world.GetPool<GameContinueRequestComponent>().Get(entity);
+                    ApplyContinueItems(resultCom.ContinueElements);
+                    _world.DelEntity(entity);
+                }
+
+                return;
+            }
         }
-        
+
+        private void ApplyContinueItems(List<int> items)
+        {
+            var replacePlan = _matchService.GetGameContinueBestApplyPositions(_world, items);
+
+            foreach (var kvp in replacePlan)
+            {
+                Vector2Int coord = kvp.Key;
+                int newConfigId = kvp.Value;
+
+                CreateSpawn2OtherAction(coord, newConfigId);
+            }
+        }
+
+        private void CreateSpawn2OtherAction(Vector2Int coord, int configId)
+        {
+            int actionEntity = _world.NewEntity();
+            ref var pending = ref _pendingActionsPool.Add(actionEntity);
+            pending.Actions = new List<AtomicAction>()
+            {
+                new AtomicAction()
+                {
+                    Type = MatchActionType.Spawn2Other,
+                    ExtraData = new GenItemData()
+                    {
+                        ConfigId = configId,
+                        GenCoord = coord,
+                        ElementSize = Vector2Int.one
+                    }
+                }
+            };
+        }
+
         private void ApplyBonusItems()
         {
             var beginUseElements = MatchManager.Instance.GetBeginUseElements();
@@ -52,7 +100,7 @@ namespace Hotfix.Logic.GamePlay
             bonusItems.AddRange(winStreakElements);
             if (bonusItems.Count == 0) return;
 
-            // 2. 获取替换方案
+            // 2. 获取可替换目标格子
             Dictionary<int, int> replacePlan = _matchService.GetBonusSpawnPositions(_world, bonusItems);
 
             // 3. 执行替换
@@ -63,8 +111,8 @@ namespace Hotfix.Logic.GamePlay
 
                 ReplaceElement(oldEntity, newConfigId);
             }
-            
-            MatchManager.Instance.ClearBeginUseElements(); 
+
+            MatchManager.Instance.ClearBeginUseElements();
         }
 
         /// <summary>
@@ -96,6 +144,7 @@ namespace Hotfix.Logic.GamePlay
                 _context,
                 _matchService,
                 newFunctionElementId,
+                ElementBuildSource.Dynamic,
                 x, y,
                 width, height
             );
@@ -148,6 +197,7 @@ namespace Hotfix.Logic.GamePlay
                     {
                         gridCell.StackedEntityIds = new List<int>();
                     }
+
                     gridCell.StackedEntityIds.Add(entityId);
                 }
             }

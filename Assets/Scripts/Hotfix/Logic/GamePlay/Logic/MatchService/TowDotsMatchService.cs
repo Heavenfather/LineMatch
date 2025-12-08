@@ -400,7 +400,7 @@ namespace Hotfix.Logic.GamePlay
             // 其余情况返回false
             return false;
         }
-        
+
         public Dictionary<int, int> GetBonusSpawnPositions(EcsWorld world, List<int> itemsToSpawn)
         {
             Dictionary<int, int> result = new Dictionary<int, int>();
@@ -408,12 +408,12 @@ namespace Hotfix.Logic.GamePlay
 
             // --- 1. 收集第一梯队：随机生成的普通棋子 ---
             var randomFilter = world.Filter<RandomGeneratedTag>()
-                                    .Include<NormalElementComponent>()
-                                    .Include<ElementComponent>()
-                                    .End();
+                .Include<NormalElementComponent>()
+                .Include<ElementComponent>()
+                .End();
 
             List<int> primaryCandidates = new List<int>();
-            
+
             foreach (var entity in randomFilter)
             {
                 primaryCandidates.Add(entity);
@@ -422,16 +422,16 @@ namespace Hotfix.Logic.GamePlay
             // --- 2. 收集第二梯队：配置生成的普通棋子 ---
             // 只有当第一梯队数量不够时，才去扫描第二梯队
             List<int> fallbackCandidates = null;
-            
+
             if (primaryCandidates.Count < itemsToSpawn.Count)
             {
                 fallbackCandidates = new List<int>();
-                
+
                 // 筛选所有 Normal 但没有 RandomTag 的实体
                 var allNormalFilter = world.Filter<NormalElementComponent>()
-                                           .Include<ElementComponent>()
-                                           .Exclude<RandomGeneratedTag>() // 排除第一梯队
-                                           .End();
+                    .Include<ElementComponent>()
+                    .Exclude<RandomGeneratedTag>() // 排除第一梯队
+                    .End();
 
                 foreach (var entity in allNormalFilter)
                 {
@@ -450,7 +450,7 @@ namespace Hotfix.Logic.GamePlay
             for (int i = 0; i < primaryCandidates.Count; i++)
             {
                 if (allocatedCount >= totalNeeded) break;
-                
+
                 result.Add(primaryCandidates[i], itemsToSpawn[allocatedCount]);
                 allocatedCount++;
             }
@@ -469,7 +469,30 @@ namespace Hotfix.Logic.GamePlay
 
             return result;
         }
-        
+
+        public Dictionary<Vector2Int, int> GetGameContinueBestApplyPositions(EcsWorld world, List<int> itemsToSpawn)
+        {
+            Dictionary<Vector2Int, int> result = new Dictionary<Vector2Int, int>();
+            if (itemsToSpawn == null || itemsToSpawn.Count == 0) return result;
+            // TowDots模式暂时不考虑被其它棋子覆盖的情况
+            List<int> primaryCandidates = new List<int>();
+            var normalElementFilter = world.Filter<NormalElementComponent>().Include<ElementPositionComponent>().End();
+            foreach (var entity in normalElementFilter)
+            {
+                primaryCandidates.Add(entity);
+            }
+
+            primaryCandidates.Shuffle();
+            int totalNeed = itemsToSpawn.Count;
+            for (int i = 0; i < primaryCandidates.Count; i++)
+            {
+                if (i >= totalNeed) break;
+                ref var posCom = ref world.GetPool<ElementPositionComponent>().Get(primaryCandidates[i]);
+                result.Add(new Vector2Int(posCom.X, posCom.Y), itemsToSpawn[i]);
+            }
+            return result;
+        }
+
         /// <summary>
         /// 检查指定位置的四个方向是否有匹配的棋子
         /// </summary>
@@ -481,7 +504,7 @@ namespace Hotfix.Logic.GamePlay
                 new Vector2Int(pos.x + 1, pos.y), // 右
                 new Vector2Int(pos.x - 1, pos.y), // 左
                 new Vector2Int(pos.x, pos.y + 1), // 上
-                new Vector2Int(pos.x, pos.y - 1)  // 下
+                new Vector2Int(pos.x, pos.y - 1) // 下
             };
 
             foreach (var dir in directions)
@@ -526,7 +549,7 @@ namespace Hotfix.Logic.GamePlay
                 new Vector2Int(pos.x + 1, pos.y), // 右
                 new Vector2Int(pos.x - 1, pos.y), // 左
                 new Vector2Int(pos.x, pos.y + 1), // 上
-                new Vector2Int(pos.x, pos.y - 1)  // 下
+                new Vector2Int(pos.x, pos.y - 1) // 下
             };
 
             foreach (var dir in directions)
@@ -696,4 +719,3 @@ namespace Hotfix.Logic.GamePlay
         }
     }
 }
-       

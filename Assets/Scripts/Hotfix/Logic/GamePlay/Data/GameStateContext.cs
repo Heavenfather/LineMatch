@@ -1,5 +1,4 @@
-﻿
-using HotfixLogic;
+﻿using HotfixLogic;
 using HotfixLogic.Match;
 
 namespace Hotfix.Logic.GamePlay
@@ -9,6 +8,11 @@ namespace Hotfix.Logic.GamePlay
     /// </summary>
     public class GameStateContext : IStateContext
     {
+        /// <summary>
+        /// 游戏是否重新开始
+        /// </summary>
+        public bool IsGameReStart { get; set; }
+        
         /// <summary>
         /// ECS世界
         /// </summary>

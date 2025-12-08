@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using GameConfig;
 using HotfixLogic.Match;
 using UnityEngine;
@@ -19,6 +19,9 @@ namespace Hotfix.Logic.GamePlay
         private EcsPool<VisualBusyComponent> _busyPool;
         private EcsPool<EliminatedTag> _eliminateTagPool;
         private EcsPool<TargetElementComponent> _targetTagPool;
+        private EcsPool<NormalElementComponent> _normalPool;
+        private EcsPool<ElementPositionComponent> _positionPool;
+        private EcsPool<BackgroundComponent> _backgroundPool;
 
         private GameStateContext _context;
         private IElementFactoryService _elementService;
@@ -27,9 +30,7 @@ namespace Hotfix.Logic.GamePlay
         private IBoard _board;
         private ElementMapDB _elementMapDB;
 
-
         private List<AtomicAction> _optimizedActions = new List<AtomicAction>();
-        private Dictionary<Vector2Int, int> _segmentDamageMap = new Dictionary<Vector2Int, int>();
 
         public void Init(IEcsSystems systems)
         {
@@ -43,6 +44,9 @@ namespace Hotfix.Logic.GamePlay
 
             _actionFilter = _world.Filter<PendingActionsComponent>().End();
 
+            _backgroundPool = _world.GetPool<BackgroundComponent>();
+            _positionPool = _world.GetPool<ElementPositionComponent>();
+            _normalPool = _world.GetPool<NormalElementComponent>();
             _actionPool = _world.GetPool<PendingActionsComponent>();
             _elePool = _world.GetPool<ElementComponent>();
             _gridPool = _world.GetPool<GridCellComponent>();
@@ -51,7 +55,6 @@ namespace Hotfix.Logic.GamePlay
             _targetTagPool = _world.GetPool<TargetElementComponent>();
 
             _optimizedActions = new List<AtomicAction>();
-            _segmentDamageMap = new Dictionary<Vector2Int, int>();
         }
 
         public void Run(IEcsSystems systems)
@@ -121,69 +124,15 @@ namespace Hotfix.Logic.GamePlay
         }
 
         /// <summary>
-        /// 时间分片合并
-        /// 在保持 Delay/Spawn 顺序的前提下，合并它们之间的 Damage
+        /// 时间分片优化
         /// </summary>
         private List<AtomicAction> OptimizeActionList(List<AtomicAction> rawActions)
         {
             _optimizedActions.Clear();
-            _segmentDamageMap.Clear();
 
-            foreach (var action in rawActions)
-            {
-                // 1. 伤害指令：暂存并累加
-                if (action.Type == MatchActionType.Damage)
-                {
-                    if (_segmentDamageMap.ContainsKey(action.GridPos))
-                    {
-                        _segmentDamageMap[action.GridPos] += action.Value;
-                    }
-                    else
-                    {
-                        _segmentDamageMap[action.GridPos] = action.Value;
-                    }
-                }
-                else
-                {
-                    // 2. 非伤害指令：检查是否是"阻断点"
-                    if (IsBarrierAction(action.Type))
-                    {
-                        // 遇到阻断（如Delay/Spawn），必须先把之前积攒的伤害结算并写入列表
-                        FlushPendingDamages();
-
-                        // 然后写入阻断指令本身 (保持了它在原始列表中的相对位置)
-                        _optimizedActions.Add(action);
-                    }
-                    else
-                    {
-                        // 其他非阻断指令 (如 Score/Audio)，直接加入，不打断伤害合并
-                        _optimizedActions.Add(action);
-                    }
-                }
-            }
-
-            // 循环结束，结算最后残留的伤害
-            FlushPendingDamages();
-
-            // 返回一个新的列表
-            return new List<AtomicAction>(_optimizedActions);
-        }
-
-        private void FlushPendingDamages()
-        {
-            if (_segmentDamageMap.Count == 0) return;
-
-            foreach (var kvp in _segmentDamageMap)
-            {
-                _optimizedActions.Add(new AtomicAction
-                {
-                    Type = MatchActionType.Damage,
-                    GridPos = kvp.Key,
-                    Value = kvp.Value
-                });
-            }
-
-            _segmentDamageMap.Clear();
+            // 暂时不做任何优化，直接返回原始列表
+            // 后续可以添加对Score、Audio等指令的合并优化
+            return rawActions;
         }
 
         private void ExecuteSingleAction(AtomicAction action)
@@ -197,7 +146,7 @@ namespace Hotfix.Logic.GamePlay
                     MatchManager.Instance.AddScore(action.Value);
                     break;
                 case MatchActionType.Transform:
-                    // TODO: 变换逻辑
+                    ExecuteTransform(action);
                     break;
                 case MatchActionType.Spawn2Other:
                     ExecuteSpawn2Other(action);
@@ -219,177 +168,117 @@ namespace Hotfix.Logic.GamePlay
             ref var request = ref shufflePool.Add(requestEntity);
         }
 
+        /// <summary>
+        /// 执行元素转换（多层障碍物消除一层后转换到下一层）
+        /// </summary>
+        private void ExecuteTransform(AtomicAction action)
+        {
+            int oldEntity = action.Value;
+            int nextConfigId = (int)action.ExtraData;
+            Vector2Int gridPos = action.GridPos;
+
+            // 检查旧实体是否还存在
+            if (!_world.IsEntityAliveInternal(oldEntity))
+                return;
+
+            if (!_elePool.Has(oldEntity))
+                return;
+
+            ref var oldElement = ref _elePool.Get(oldEntity);
+
+            // 获取旧实体的位置和尺寸
+            int width = oldElement.Width;
+            int height = oldElement.Height;
+
+            // 销毁旧实体
+            _elementService.AddDestroyElementTag2Entity(_world, oldEntity);
+
+            // 创建新实体
+            int newEntity = _elementService.CreateElementEntity(
+                _context,
+                _matchService,
+                nextConfigId,
+                ElementBuildSource.Dynamic,
+                gridPos.x, gridPos.y,
+                width, height
+            );
+
+            // 将新实体添加到格子
+            RegisterToGrid(-1, newEntity, gridPos.x, gridPos.y, width, height);
+        }
 
         /// <summary>
         /// 应用伤害到指定格子
         /// </summary>
         private void ApplyDamage(AtomicAction action)
         {
-            int remainingDamage = action.Value;
+            int damageValue = action.Value; // 这次伤害命令的伤害值（通常为1）
             Vector2Int gridPos = action.GridPos;
 
-            // 防止死循环：最多处理 5 层堆叠
-            const int MAX_ITERATIONS = 5;
-            int iteration = 0;
+            // 1. 找到格子上最顶层可伤害的实体
+            int targetEntity = FindTopDamageableEntity(gridPos);
 
-            // 循环处理伤害，直到伤害耗尽或没有更多可消除的实体
-            while (remainingDamage > 0 && iteration < MAX_ITERATIONS)
-            {
-                iteration++;
+            if (targetEntity < 0)
+                return;
 
-                // 1. 查找当前格子上最顶层的可消除实体
-                int targetEntity = FindTopDamageableEntity(gridPos);
+            if (!_elePool.Has(targetEntity))
+                return;
 
-                // 如果没有找到可消除的实体，伤害结束
-                if (targetEntity <= 0 || !_world.IsEntityAliveInternal(targetEntity))
-                {
-                    break;
-                }
+            ref var ele = ref _elePool.Get(targetEntity);
 
-                // 2. 检查实体是否有效
-                if (!_elePool.Has(targetEntity))
-                {
-                    break;
-                }
-
-                ref var ele = ref _elePool.Get(targetEntity);
-
-                // 如果实体正在处理中，跳过
-                if (ele.LogicState == ElementLogicalState.Acting ||
-                    ele.LogicState == ElementLogicalState.Dying)
-                {
-                    break;
-                }
-
-                // 3. 处理循环类型的元素（特殊元素，伤害全部作用在它身上）
-                if (ele.IsCycleElement())
-                {
-                    AddEliminateTag(targetEntity, remainingDamage, ref ele);
-                    remainingDamage = 0;
-                    break;
-                }
-
-                // 4. 应用伤害到当前实体
-                int damageApplied = ApplyDamageToEntity(targetEntity, ref ele, remainingDamage);
-                remainingDamage -= damageApplied;
-
-                // 如果实体没有被完全消除（还有血量），伤害结束
-                if (ele.EliminateCount > 0)
-                {
-                    break;
-                }
-
-                // 实体被消除，继续处理下一层（如果还有剩余伤害）
-            }
-
-            // 防止死循环的日志
-            if (iteration >= MAX_ITERATIONS)
-            {
-                Logger.Error($"ApplyDamage: Max iterations reached at {gridPos}, possible infinite loop!");
-            }
+            // 2. 累积伤害到EliminatedTag
+            // 各元素System读取Tag.EliminateCount来决定如何处理
+            AddOrAccumulateEliminateTag(targetEntity, damageValue, EliminateReason.Damage);
         }
 
         /// <summary>
-        /// 应用伤害到单个实体
+        /// 添加或累积EliminatedTag
         /// </summary>
-        private int ApplyDamageToEntity(int entityId, ref ElementComponent ele, int damage)
+        private void AddOrAccumulateEliminateTag(int entityId, int damage, EliminateReason reason)
         {
-            int totalDamageApplied = 0;
-            int remainingDamage = damage;
+            if (damage <= 0)
+                return;
 
-            // 1. 扣除当前实体的消除次数
-            int damageToApply = Mathf.Min(remainingDamage, ele.EliminateCount);
-            ele.EliminateCount -= damageToApply;
-            totalDamageApplied += damageToApply;
-            remainingDamage -= damageToApply;
-
-            // 2. 如果实体被消除
-            if (ele.EliminateCount <= 0)
+            if (_eliminateTagPool.Has(entityId))
             {
-                // 检查是否有多态转换
-                if (remainingDamage > 0)
-                {
-                    int additionalDamage = ApplyTransitionDamage(ref ele, remainingDamage);
-                    totalDamageApplied += additionalDamage;
-                }
-
-                // 添加消除标签
-                AddEliminateTag(entityId, totalDamageApplied, ref ele);
+                // 累积伤害次数
+                _elementService.AddEliminateTag2Entity(_world, entityId, damage, reason);
             }
             else
             {
-                // 实体没有被完全消除，只添加消除标签
-                AddEliminateTag(entityId, totalDamageApplied, ref ele);
-            }
-
-            return totalDamageApplied;
-        }
-
-        /// <summary>
-        /// 应用多态转换伤害
-        /// 返回：额外消耗的伤害值
-        /// </summary>
-        private int ApplyTransitionDamage(ref ElementComponent ele, int remainingDamage)
-        {
-            int additionalDamage = 0;
-            int currentConfigID = ele.ConfigId;
-
-            // 防止死循环：最多转换 10 次
-            const int MAX_TRANSITIONS = 10;
-            int transitionCount = 0;
-
-            while (remainingDamage > 0 && transitionCount < MAX_TRANSITIONS)
-            {
-                transitionCount++;
-
-                // 尝试转换到下一层元素
-                if (!_transitionRule.TryTransitionToNextElement(currentConfigID, _matchService, out var nextConfigID))
+                // 首次添加标签
+                _elementService.AddEliminateTag2Entity(_world, entityId, damage, reason);
+                
+                // Normal元素继续传递伤害给Background
+                if (_normalPool.Has(entityId) && reason == EliminateReason.Damage)
                 {
-                    // 没有下一层，转换结束
-                    break;
+                    ref var pos = ref _positionPool.Get(entityId);
+                    if (_board.TryGetGridEntity(pos.X, pos.Y, out int gridEntity))
+                    {
+                        ref var grid = ref _gridPool.Get(gridEntity);
+                        for (int i = 0; i < grid.StackedEntityIds.Count; i++)
+                        {
+                            if(grid.StackedEntityIds[i] == entityId)
+                                continue;
+                            if (_backgroundPool.Has(grid.StackedEntityIds[i]))
+                            {
+                                ref var backgroundEle = ref _elePool.Get(grid.StackedEntityIds[i]);
+                                backgroundEle.LogicState = ElementLogicalState.Acting;
+                                if (!_eliminateTagPool.Has(grid.StackedEntityIds[i]))
+                                {
+                                    ref var backgroundTag = ref _eliminateTagPool.Add(grid.StackedEntityIds[i]);
+                                    backgroundTag.EliminateCount = 1;
+                                }
+                                break;
+                            }
+                        }
+                    }
                 }
-
-                // 获取下一层元素的配置
-                ref readonly ElementMap nextConfig = ref _elementMapDB[nextConfigID];
-
-                // 如果下一层元素的消除次数无效，转换结束
-                if (nextConfig.eliminateCount < 0)
-                {
-                    break;
-                }
-
-                // 应用伤害到下一层
-                int damage = Mathf.Min(remainingDamage, nextConfig.eliminateCount);
-                additionalDamage += damage;
-                remainingDamage -= damage;
-
-                // 如果下一层也被消除，继续转换
-                if (remainingDamage > 0)
-                {
-                    currentConfigID = nextConfigID;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return additionalDamage;
-        }
-
-        private void AddEliminateTag(int entity, int count, ref ElementComponent element)
-        {
-            if (!_eliminateTagPool.Has(entity))
-            {
-                element.LogicState = ElementLogicalState.Acting;
-                ref var tag = ref _eliminateTagPool.Add(entity);
-                tag.EliminateCount = count;
             }
         }
 
         /// <summary>
-        /// 在指定格子上寻找“最顶层”且“活着”的可消除实体
-        /// 如果一些不能被消除的，必须要在这里拦截掉，否则在执行的时候就会被标上死亡标签
+        /// 在指定格子上寻找"最顶层"且"可伤害"的实体
         /// </summary>
         private int FindTopDamageableEntity(Vector2Int pos)
         {
@@ -403,53 +292,112 @@ namespace Hotfix.Logic.GamePlay
             if (grid.StackedEntityIds == null || grid.StackedEntityIds.Count == 0)
                 return -1;
 
-            int bestEntity = -1;
-            int highestLayer = int.MinValue;
+            // 2. 按Layer从高到低排序，找到第一个可伤害的实体
+            List<int> sortedEntities = new List<int>(grid.StackedEntityIds);
+            sortedEntities.Sort((a, b) =>
+            {
+                if (!_elePool.Has(a) || !_elePool.Has(b))
+                    return 0;
+                ref var eleA = ref _elePool.Get(a);
+                ref var eleB = ref _elePool.Get(b);
+                return eleB.Layer.CompareTo(eleA.Layer); // 从高到低
+            });
 
-            // 2. 遍历堆叠列表 找出 ElementComponent.Layer 最大的
-            foreach (var entId in grid.StackedEntityIds)
+            // 3. 遍历排序后的实体，找到第一个可伤害的
+            foreach (var entId in sortedEntities)
             {
                 if (!_elePool.Has(entId)) continue;
                 ref var ele = ref _elePool.Get(entId);
 
-                // 忽略待处理的实体
-                if (ele.LogicState == ElementLogicalState.Acting ||
-                    ele.LogicState == ElementLogicalState.Dying) continue;
+                // 水元素不能被销毁
+                if (ele.Type == ElementType.SpreadWater)
+                    continue;
 
-                // 有些障碍物是直接盖住底层的其它棋子，其它棋子根本就不能被消 如卷帘
+                // 有些障碍物是直接盖住底层的其它棋子，其它棋子根本就不能被消除（如卷帘）
                 if (_targetTagPool.Has(entId))
                     break;
-                // 有些障碍物根本不能被销毁，它有自己的销毁机制，这里就交给各自的构建器去负责分析
+
+                // 有些障碍物根本不能被销毁，它有自己的销毁机制
                 if (!_elementService.IsElementCanSelected(ele.Type, _world, entId))
                     continue;
-                // 如果是循环的元素，就说明这个元素就始终占着这个格子
+
+                // 如果是循环元素，就始终占着这个格子
                 if (ele.IsCycleElement())
                 {
-                    bestEntity = entId;
-                    break;
+                    return entId;
                 }
 
-                // 找 Layer 最大的
-                if (ele.Layer > highestLayer)
+                // 关键判断：检查实体是否已经死亡
+                if (ele.LogicState == ElementLogicalState.Dying)
                 {
-                    highestLayer = ele.Layer;
-                    bestEntity = entId;
+                    // 已经死亡，继续查找下一个
+                    continue;
                 }
+
+                // 如果实体正在Acting，检查它是否还能承受伤害
+                if (ele.LogicState == ElementLogicalState.Acting)
+                {
+                    // 检查累积的伤害是否已经超过实体的承受能力
+                    if (_eliminateTagPool.Has(entId))
+                    {
+                        ref var tag = ref _eliminateTagPool.Get(entId);
+                        
+                        // 计算实体还能承受多少伤害
+                        int maxDamageCapacity = CalculateMaxDamageCapacity(ref ele);
+                        
+                        // 如果已经达到或超过承受上限，说明实体已经"死亡"，查找下一个
+                        if (tag.EliminateCount >= maxDamageCapacity)
+                        {
+                            continue;
+                        }
+                    }
+                    
+                    // 还能承受伤害，返回这个实体
+                    return entId;
+                }
+
+                // 正常状态的实体，可以伤害
+                return entId;
             }
 
-            return bestEntity;
+            return -1;
         }
 
         /// <summary>
-        /// 判断是否是阻断性指令
+        /// 计算实体能承受的最大伤害容量
+        /// 包括当前形态的EliminateCount + 所有可能的多态转换形态的EliminateCount
         /// </summary>
-        private bool IsBarrierAction(MatchActionType type)
+        private int CalculateMaxDamageCapacity(ref ElementComponent ele)
         {
-            // Delay: 时间阻断，前后逻辑必须分开
-            // Spawn/Transform: 空间阻断，改变了格子上的实体引用，必须先结算之前的伤害
-            return type == MatchActionType.Delay ||
-                   type == MatchActionType.Spawn2Other ||
-                   type == MatchActionType.Transform;
+            int capacity = ele.EliminateCount;
+
+            // 如果有多态转换，递归计算所有形态的承受能力
+            int currentConfigId = ele.ConfigId;
+            int transitionCount = 0;
+            const int MAX_TRANSITIONS = 10;
+
+            while (transitionCount < MAX_TRANSITIONS)
+            {
+                transitionCount++;
+
+                // 尝试转换到下一层
+                if (!_transitionRule.TryTransitionToNextElement(currentConfigId, _matchService, out var nextConfigID))
+                {
+                    break;
+                }
+
+                ref readonly ElementMap nextConfig = ref _elementMapDB[nextConfigID];
+
+                if (nextConfig.eliminateCount < 0)
+                {
+                    break;
+                }
+
+                capacity += ele.EliminateCount;
+                currentConfigId = nextConfigID;
+            }
+
+            return capacity;
         }
 
         private void ExecuteSpawn2Other(AtomicAction action)
@@ -467,7 +415,7 @@ namespace Hotfix.Logic.GamePlay
                 for (int i = 0; i < genEntities.Count; i++)
                 {
                     ref var genEle = ref _elePool.Get(genEntities[i]);
-                    AddEliminateTag(genEntities[i], genEle.EliminateCount, ref genEle);
+                    AddOrAccumulateEliminateTag(genEntities[i], genEle.EliminateCount, EliminateReason.Replace);
                 }
             }
             else if (action.ExtraData is GenItemData itemData)
@@ -487,7 +435,7 @@ namespace Hotfix.Logic.GamePlay
                 {
                     ref var oldEle = ref _elePool.Get(oldEntity);
                     // 标记为 Acting (防止同一帧重复选中) 并打上 EliminatedTag
-                    AddEliminateTag(oldEntity, oldEle.MaxEliminateCount, ref oldEle);
+                    AddOrAccumulateEliminateTag(oldEntity, oldEle.MaxEliminateCount, EliminateReason.Replace);
                 }
             }
 
@@ -496,6 +444,7 @@ namespace Hotfix.Logic.GamePlay
                 _context,
                 _matchService,
                 itemData.ConfigId,
+                ElementBuildSource.Dynamic,
                 itemData.GenCoord.x,
                 itemData.GenCoord.y,
                 itemData.ElementSize.x,
@@ -526,7 +475,6 @@ namespace Hotfix.Logic.GamePlay
                     if (gridComp.StackedEntityIds.Contains(oldEntity))
                         gridComp.StackedEntityIds.Remove(oldEntity);
                     gridComp.StackedEntityIds.Add(entityId);
-                    gridComp.IsBlank = false;
                 }
             }
         }

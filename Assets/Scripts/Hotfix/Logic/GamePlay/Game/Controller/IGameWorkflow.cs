@@ -11,6 +11,8 @@ namespace Hotfix.Logic.GamePlay
     {
         EventDispatcher EventDispatcher { get; }
         
+        GameState CurrentGameState { get; }
+        
         /// <summary>
         /// 设置共享数据
         /// </summary>

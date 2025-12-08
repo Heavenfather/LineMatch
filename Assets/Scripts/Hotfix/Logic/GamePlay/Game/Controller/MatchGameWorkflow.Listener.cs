@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Remoting.Contexts;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
@@ -20,6 +21,7 @@ namespace Hotfix.Logic.GamePlay
                 this);
             EventDispatcher.AddEventListener(GameEventDefine.OnGameSuccess, OnGameSuccess, this);
             EventDispatcher.AddEventListener<EventOneParam<bool>>(GameEventDefine.OnGameFailure, OnGameFailure, this);
+            EventDispatcher.AddEventListener<EventThreeParam<List<int>, List<int>, bool>>(GameEventDefine.OnMatchUpdateSpecialElements,OnMatchUpdateSpecialElements,this);
         }
 
         private void OnGameFailure(EventOneParam<bool> obj)
@@ -81,6 +83,7 @@ namespace Hotfix.Logic.GamePlay
 
         private void OnMatchAddStep(EventTwoParam<int, bool> obj)
         {
+            _gameStateContext.MatchStateContext.IsResultTriggered = false;
             _gameStateContext.MatchStateContext.AddStep(obj.Arg1);
         }
 
@@ -92,6 +95,17 @@ namespace Hotfix.Logic.GamePlay
                 LevelTargetSystem.Instance.TargetElements);
             win?.SetLevel(_gameStateContext.CurrentLevel);
             G.UIModule.ScreenLock("MatchFailure", false);
+        }
+        
+        private void OnMatchUpdateSpecialElements(EventThreeParam<List<int>, List<int>, bool> obj)
+        {
+            if(obj.Arg3 == false)
+                return;
+            var itemIds = obj.Arg1;
+            int entity = _gameStateContext.World.NewEntity();
+            var pool = _gameStateContext.World.GetPool<GameContinueRequestComponent>();
+            ref var request = ref pool.Add(entity);
+            request.ContinueElements = itemIds;
         }
     }
 }

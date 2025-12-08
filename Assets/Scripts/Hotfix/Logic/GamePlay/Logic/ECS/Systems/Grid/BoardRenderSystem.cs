@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
 {
-    public class BoardRenderSystem : IEcsInitSystem
+    public class BoardRenderSystem : IEcsInitSystem,IEcsDestroySystem
     {
         private GameStateContext _context;
         private IBoard _board;
@@ -15,9 +15,12 @@ namespace Hotfix.Logic.GamePlay
         private EcsFilter _filter;
         private EcsPool<GridCellComponent> _cellPool;
 
+        private List<GameObject> _holeLines = new List<GameObject>();
 
         public void Init(IEcsSystems systems)
         {
+            _holeLines.Clear();
+            
             _context = systems.GetShared<GameStateContext>();
             _board = _context.Board;
             _gridRoot = _context.SceneView.GetSceneRootTransform("MatchCanvas", "GridBoard/Grid");
@@ -159,8 +162,10 @@ namespace Hotfix.Logic.GamePlay
             var prefab = _viewConfig.GetLinePrefab(type);
             if (prefab)
             {
-                var go = Object.Instantiate(prefab, _gridRoot);
+                var go = Object.Instantiate(prefab, _holeRoot);
+                go.SetVisible(true);
                 go.transform.position = basePos + offset;
+                _holeLines.Add(go);
             }
         }
 
@@ -171,7 +176,9 @@ namespace Hotfix.Logic.GamePlay
             var prefab = _viewConfig.GetLinePrefab(type);
             if (!prefab) return;
 
-            var go = Object.Instantiate(prefab, _gridRoot);
+            var go = Object.Instantiate(prefab, _holeRoot);
+            go.SetVisible(true);
+            _holeLines.Add(go);
             var sp = go.GetComponent<SpriteRenderer>();
 
             Vector2 size = Vector2.zero;
@@ -212,5 +219,16 @@ namespace Hotfix.Logic.GamePlay
             return go;
         }
 
+        public void Destroy(IEcsSystems systems)
+        {
+            if (_holeLines.Count > 0)
+            {
+                for (int i = _holeLines.Count - 1; i >= 0; i--)
+                {
+                    UnityEngine.Object.Destroy(_holeLines[i]);
+                }
+            }
+            _holeLines.Clear();
+        }
     }
 }

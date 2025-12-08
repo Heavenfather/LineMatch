@@ -2,6 +2,7 @@
 using Hotfix.Define;
 using Hotfix.EventParameter;
 using HotfixCore.Module;
+using UnityEngine;
 
 namespace Hotfix.Logic.GamePlay
 {
@@ -34,6 +35,11 @@ namespace Hotfix.Logic.GamePlay
         }
 
         /// <summary>
+        /// 结算结果是否已触发
+        /// </summary>
+        public bool IsResultTriggered { get; set; }
+
+        /// <summary>
         /// 记录掉落物的已生成数量 (Key: ConfigId, Value: Count)
         /// </summary>
         public Dictionary<int, int> DropElementMapCounts = new Dictionary<int, int>();
@@ -49,6 +55,8 @@ namespace Hotfix.Logic.GamePlay
         /// 只要棋盘初始配置里该列出现了目标（或其变体），该列就记录在案
         /// </summary>
         public Dictionary<int, List<int>> TargetValidColumns = new Dictionary<int, List<int>>();
+
+        public HashSet<Vector2Int> RoundEliminateCoords = new HashSet<Vector2Int>();
 
         /// <summary>
         /// 增加掉落计数
@@ -150,23 +158,16 @@ namespace Hotfix.Logic.GamePlay
         }
 
         /// <summary>
-        /// 每次新输入清理
-        /// </summary>
-        public void RoundClear()
-        {
-        }
-
-        /// <summary>
         /// 关卡退出清理
         /// </summary>
         public void Clear()
         {
-            RoundClear();
-
             DropElementMapCounts.Clear();
             GlobalDropQuotas.Clear();
             TargetValidColumns.Clear();
+            RoundEliminateCoords.Clear();
             IsGameSettlement = false;
+            IsResultTriggered = false;
         }
     }
 }
